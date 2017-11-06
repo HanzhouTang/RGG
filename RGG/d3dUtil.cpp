@@ -305,15 +305,19 @@ void GenVertexColor(const std::vector<std::unordered_set<int>>& matrix,\
 DWORD WINAPI Coloring(LPVOID colorPara){
 	using std::cout;
 	using std::endl;
-	std::vector<int> color;
 	ColoringParameter* ptr = static_cast<ColoringParameter*>(colorPara);
 	cout << ptr->mMatrix.size()<<endl;
 	GenSmallestLastOrder(ptr->mMatrix, ptr->mOrder, ptr->mMinDegree, ptr->mMaxDegree);
-	GenVertexColor(ptr->mMatrix, ptr->mOrder,color);
-	cout << "completed" << endl;
-
-
+	GenVertexColor(ptr->mMatrix, ptr->mOrder,ptr->mColor);
+	//ÔÝÊ±ÓÃ color table
+	//WM_COLORING_FINSHED
+	SendMessage(ptr->mHwnd, WM_COLORING_FINSHED, 0, 0);
 	return 0;
 }
+
+DWORD FtoDw(float f){
+	return *((DWORD*)&f);
+}
+
 
 //¿¼ÂÇÒ»²¨Çò

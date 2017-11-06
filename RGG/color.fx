@@ -42,5 +42,6 @@ technique ColorTech
         // Specify the vertex and pixel shader associated with this pass.
         vertexShader = compile vs_2_0 ColorVS();
         pixelShader  = compile ps_2_0 ColorPS();
+		//PointSpriteEnable = true;
     }
 }

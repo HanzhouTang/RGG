@@ -8,7 +8,7 @@
 #include<iostream>
 #include<list>
 #include "Vertex.h"
-
+//想想办法
 #define SQUARE    1
 #define DISK      2
 int gType=SQUARE;
@@ -25,6 +25,7 @@ public:
 	void onLostDevice();
 	void onResetDevice();
 	void updateScene(float dt);
+	void onColoringFinshed();
 	void drawScene();
 
 	// Helper methods
@@ -37,15 +38,15 @@ private:
 	DWORD mNumLines;
 	DWORD mNumVertices;
 	float mAvergaeDegree;
-	ColoringParameter* mColor;
+	ColoringParameter* mColorParameter;
 	std::vector<D3DXVECTOR3> mVerts;
 	std::vector<Line> mLines;
 	std::vector<std::unordered_set<int>> mMatrix;
+	std::vector<int> mColor;
 	std::unordered_map<int, std::vector<int>> mMapOfNodes; // nodes in erver cells
 	std::list<int> mSmallestLastOrder;
-	IDirect3DVertexBuffer9* mColorLB;
 	IDirect3DVertexBuffer9* mLB;
-	//IDirect3DIndexBuffer9*  mIB;
+	IDirect3DVertexBuffer9*   mVB;
 	ID3DXEffect*            mFX;
 	D3DXHANDLE              mhTech;
 	D3DXHANDLE              mhWVP;
@@ -156,17 +157,17 @@ RGG::RGG(HINSTANCE hInstance, std::string winCaption, D3DDEVTYPE devType, DWORD 
 	buildFX();
 	onResetDevice();
 	InitAllVertexDeclarations();
-	mColor =new ColoringParameter(mMatrix, mSmallestLastOrder,\
-		mGfxStats->GetMinDegree(), mGfxStats->GetMaxDegree(),mVerts,&mColorLB);
-	CreateThread(0, 0, Coloring, mColor, 0, NULL);
+	mColorParameter =new ColoringParameter(mMatrix, mSmallestLastOrder,\
+		mGfxStats->GetMinDegree(), mGfxStats->GetMaxDegree(),mColor,mhMainWnd);
+	CreateThread(0, 0, Coloring, mColorParameter, 0, NULL);
 }
 
 RGG::~RGG()
 { 
-	delete mColor;
+	delete mColorParameter;
 	delete mGfxStats;
-	ReleaseCOM(mColorLB);
 	ReleaseCOM(mLB);
+	ReleaseCOM(mVB);
 	ReleaseCOM(mFX);
 	DestroyAllVertexDeclarations();
 }
@@ -231,9 +232,27 @@ void RGG::updateScene(float dt)
 	buildViewMtx();
 }
 
+void RGG::onColoringFinshed()
+{
+	using std::cout;
+	using std::endl;
+	cout << "coloring finshed congratulation!" << endl;
+	VertexCol* v = 0;
+	HR(mLB->Lock(0, 0, (void**)&v, 0));
+	for (DWORD i = 0; i < mLines.size(); i++) {
+		v[i * 2] = VertexCol(mVerts[mLines[i].begin], gColorTable[mColor[mLines[i].begin]]);
+		v[i * 2 + 1] = VertexCol(mVerts[mLines[i].end], gColorTable[mColor[mLines[i].end]]);
+	}
+	HR(mLB->Unlock());
+	HR(mVB->Lock(0, 0, (void**)&v, 0));
+	for (DWORD i = 0; i < mVerts.size(); i++) {
+		v[i] = VertexCol(mVerts[i], gColorTable[mColor[i]]);
+	}
+	HR(mVB->Unlock());
+}
 
 
-//我意识到，单独的点是没有画的必要的
+//如果要用point sprite，还是需要单独存储点的信息
 
 
 void RGG::drawScene()
@@ -249,8 +268,11 @@ void RGG::drawScene()
 	// declaration we are using.
 	
 	//HR(gd3dDevice->SetStreamSource(0, mColorLB, 0, sizeof(VertexCol)));
-	HR(gd3dDevice->SetStreamSource(0, mLB, 0, sizeof(VertexCol)));
+	
 	HR(gd3dDevice->SetVertexDeclaration(VertexCol::Decl));
+	//把 D3DRS_POINTSIZE 放到 shader 里
+	gd3dDevice->SetRenderState(D3DRS_POINTSIZE, FtoDw(7.0f));
+
 	// Setup the rendering FX
 	HR(mFX->SetTechnique(mhTech));
 	HR(mFX->SetMatrix(mhWVP, &(matRotateX*matRotateZ*mView*mProj)));
@@ -261,7 +283,10 @@ void RGG::drawScene()
 	for (UINT i = 0; i < numPasses; ++i)
 	{
 		HR(mFX->BeginPass(i));
+		    HR(gd3dDevice->SetStreamSource(0, mLB, 0, sizeof(VertexCol)));
 			HR(gd3dDevice->DrawPrimitive(D3DPT_LINELIST, 0, mLines.size()));
+			HR(gd3dDevice->SetStreamSource(0, mVB, 0, sizeof(VertexCol)));
+			HR(gd3dDevice->DrawPrimitive(D3DPT_POINTLIST, 0, mNumVertices));
 		HR(mFX->EndPass());
 	}
 	HR(mFX->End());
@@ -306,13 +331,27 @@ void RGG::buildGeoBuffers()
 	}
 	mGfxStats->setAverageDegree(static_cast<float>(mLines.size() * 2) /static_cast<float>(mNumVertices));
 	mGfxStats->setMaxDegreeAndMinDegree(mx, mn);
+	////////////////////////////////////////////////////////////////////////////
+	VertexCol* v = 0;
+	HR(gd3dDevice->CreateVertexBuffer(mVerts.size()* sizeof(VertexCol),
+		 D3DUSAGE_WRITEONLY | D3DUSAGE_POINTS, 0, D3DPOOL_MANAGED, &mVB, 0));
+
+	HR(mVB->Lock(0, 0, (void**)&v, 0));
+
+	for (DWORD i = 0; i < mVerts.size(); i++) {
+		v[i] = VertexCol(mVerts[i], WHITE);
+	}
+	HR(mVB->Unlock());
+	//     D3DUSAGE_DYNAMIC 或许不被支持?
+	////////////////////////////////////////////////////////////////////////////
 	HR(gd3dDevice->CreateVertexBuffer(mLines.size()* 2 * sizeof(VertexCol),
 		D3DUSAGE_WRITEONLY, 0, D3DPOOL_MANAGED, &mLB, 0));
-	VertexCol* v = 0;
+
+	
 	HR(mLB->Lock(0, 0, (void**)&v, 0));
 
 	for (DWORD i = 0; i < mLines.size(); i++) {
-		v[i * 2] = VertexCol( mVerts[mLines[i].begin],RED);
+		v[i * 2] = VertexCol( mVerts[mLines[i].begin],WHITE);
 		v[i * 2 + 1] = VertexCol(mVerts[mLines[i].end],WHITE);
 	}
 	HR(mLB->Unlock());
@@ -354,3 +393,9 @@ void RGG::buildProjMtx()
 //mesh 
 //ball
 
+
+//需要搞
+//抗锯齿
+//近大远处小（或者手动设置，或者看一下point sprite）
+//球面撒点
+//更多的颜色

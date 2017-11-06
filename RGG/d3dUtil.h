@@ -1,7 +1,6 @@
 #define _CRT_SECURE_NO_WARNINGS
 #ifndef D3DUTIL_H
 #define D3DUTIL_H
-#define MAP_LENGTH  1000
 #include<iostream>
 #include <d3d9.h>
 #include <d3dx9.h>
@@ -12,6 +11,8 @@
 #include<tuple>
 #include<unordered_set>
 #include<unordered_map>
+#define WM_COLORING_FINSHED WM_USER+1
+#define MAP_LENGTH  1000
 //=============================================================
 //color table
 const D3DCOLOR WHITE = D3DCOLOR_XRGB(255, 255, 255); 
@@ -67,7 +68,7 @@ extern IDirect3DDevice9* gd3dDevice;
 
 //===============================================================
 // Geometry generation.
-
+DWORD FtoDw(float f);
 void GenVertexSquare(int numVertices,
 	std::vector<D3DXVECTOR3>& verts);
 
@@ -101,17 +102,17 @@ std::vector<int> GetByR(std::vector<std::vector<int>>& map, int i, int j, int r)
 //===============================================================
 // MultiThreading
 struct ColoringParameter {
-	IDirect3DVertexBuffer9** mColorLB;
-	const std::vector<D3DXVECTOR3>& mVerts;
+
+	std::vector<int>& mColor;
 	std::list<int>& mOrder;
 	const std::vector<std::unordered_set<int>>& mMatrix;
 	int mMaxDegree, mMinDegree;
+	const HWND& mHwnd;
 	ColoringParameter(const std::vector<std::unordered_set<int>>& matrix,std::list<int>& list,\
-		int mindegree, int maxdegree,const std::vector<D3DXVECTOR3>& verts, IDirect3DVertexBuffer9** lb)
-		:mOrder(list),mMatrix(matrix),mVerts(verts){
+		int mindegree, int maxdegree,std::vector<int>& color,const HWND& hwnd)
+		:mOrder(list),mMatrix(matrix),mColor(color),mHwnd(hwnd){
 		mMaxDegree = maxdegree;
 		mMinDegree = mindegree;
-		mColorLB = lb;
 	}
 };
 DWORD WINAPI Coloring(LPVOID colorPara);
