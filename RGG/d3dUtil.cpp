@@ -49,7 +49,7 @@ std::vector<Line> GenLineBySets(const std::vector<int>& a, const std::vector<int
 	for (std::size_t i = 0; i < a.size(); i++) {
 		for (std::size_t j = 0; j < b.size(); j++) {
 			if (Distance(verts[a[i]], verts[b[j]]) <= scalarR) {
-				t.push_back(Line(verts[a[i]], verts[b[j]]));
+				t.push_back(Line(a[i], b[j]));
 				matrix[a[i]].insert(b[j]);
 				matrix[b[j]].insert(a[i]);
 			}
@@ -153,7 +153,7 @@ void GenLinkingByCell(int r, float scalarR, std::vector<Line>&lines,\
 				for (std::size_t y = x + 1; y < vs.size(); y++) {
 					auto a = verts[vs[x]], b = verts[vs[y]];
 					if (Distance(a, b) <= scalarR) {
-						lines.push_back(Line(a, b));
+						lines.push_back(Line(vs[x], vs[y]));
 						matrix[vs[x]].insert(vs[y]);
 						matrix[vs[y]].insert(vs[x]);
 					}
@@ -228,7 +228,7 @@ void GenLinkingLines(std::vector<D3DXVECTOR3>& verts,
 	for (int i = 0; i < verts.size(); i++) {
 		for (int j = i + 1; j < verts.size(); j++) {
 			if (Distance(verts[i], verts[j]) <= r) {
-				lines.push_back(Line(verts[i], verts[j]));
+				lines.push_back(Line(i, j));
 			}
 		}
 	}
@@ -274,16 +274,45 @@ void GenSmallestLastOrder(const std::vector<std::unordered_set<int>>& matrix, st
 	}
 }
 
-
+void GenVertexColor(const std::vector<std::unordered_set<int>>& matrix,\
+	const std::list<int>& order,std::vector<int>& color) {
+	using std::cout;
+	using std::endl;
+	color.resize(matrix.size(),-1);
+	std::unordered_map<int, int> color_result;
+	for (auto ptr = order.begin(); ptr != order.end(); ptr++) {
+		int c = -1;
+		int node = *ptr;
+		bool canColor = true;
+		do {
+			c++;
+			canColor = true;
+			for (auto nearptr = matrix[node].begin(); nearptr != matrix[node].end(); nearptr++) {
+				if (color[*nearptr] == c) {
+					canColor = false;
+					break;
+				}
+			}
+		} while (!canColor);
+		if (color_result.find(c) == color_result.end()) color_result[c] = 1;
+		else color_result[c]++;
+		color[node] = c;
+	}
+	cout <<"needed color number: "<< color_result.size() << endl;
+}
 
 
 DWORD WINAPI Coloring(LPVOID colorPara){
 	using std::cout;
 	using std::endl;
+	std::vector<int> color;
 	ColoringParameter* ptr = static_cast<ColoringParameter*>(colorPara);
 	cout << ptr->mMatrix.size()<<endl;
 	GenSmallestLastOrder(ptr->mMatrix, ptr->mOrder, ptr->mMinDegree, ptr->mMaxDegree);
+	GenVertexColor(ptr->mMatrix, ptr->mOrder,color);
 	cout << "completed" << endl;
+
+
 	return 0;
 }
 

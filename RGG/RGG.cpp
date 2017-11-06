@@ -8,8 +8,9 @@
 #include<iostream>
 #include<list>
 #include "Vertex.h"
-#define SQUARE 1
-#define DISK 2
+
+#define SQUARE    1
+#define DISK      2
 int gType=SQUARE;
 int gVertexNum=64000;
 float gDegree=8.0f;
@@ -42,13 +43,13 @@ private:
 	std::vector<std::unordered_set<int>> mMatrix;
 	std::unordered_map<int, std::vector<int>> mMapOfNodes; // nodes in erver cells
 	std::list<int> mSmallestLastOrder;
-	IDirect3DVertexBuffer9* mVB;
+	IDirect3DVertexBuffer9* mColorLB;
 	IDirect3DVertexBuffer9* mLB;
 	//IDirect3DIndexBuffer9*  mIB;
 	ID3DXEffect*            mFX;
 	D3DXHANDLE              mhTech;
 	D3DXHANDLE              mhWVP;
-	D3DXHANDLE              mhTime;
+	//D3DXHANDLE              mhTime;
 
 	float mTime;
 
@@ -102,8 +103,6 @@ int main() {
 	using std::endl;
 	// Enable run-time memory check for debug builds.
 
-	
-	
 	auto cmd = GetCommandLine();
 	std::istringstream iss(cmd);
 	do
@@ -153,15 +152,12 @@ RGG::RGG(HINSTANCE hInstance, std::string winCaption, D3DDEVTYPE devType, DWORD 
 	mTime = 0.0f;
 	mNumVertices = gVertexNum;
 	mAvergaeDegree = gDegree;
-	
 	buildGeoBuffers();
-
 	buildFX();
-	
 	onResetDevice();
 	InitAllVertexDeclarations();
 	mColor =new ColoringParameter(mMatrix, mSmallestLastOrder,\
-		mGfxStats->GetMinDegree(), mGfxStats->GetMaxDegree());
+		mGfxStats->GetMinDegree(), mGfxStats->GetMaxDegree(),mVerts,&mColorLB);
 	CreateThread(0, 0, Coloring, mColor, 0, NULL);
 }
 
@@ -169,7 +165,7 @@ RGG::~RGG()
 { 
 	delete mColor;
 	delete mGfxStats;
-	ReleaseCOM(mVB);
+	ReleaseCOM(mColorLB);
 	ReleaseCOM(mLB);
 	ReleaseCOM(mFX);
 	DestroyAllVertexDeclarations();
@@ -236,6 +232,10 @@ void RGG::updateScene(float dt)
 }
 
 
+
+//我意识到，单独的点是没有画的必要的
+
+
 void RGG::drawScene()
 {
 	// Clear the backbuffer and depth buffer.
@@ -247,22 +247,21 @@ void RGG::drawScene()
 	HR(gd3dDevice->BeginScene());
 	// Let Direct3D know the vertex buffer, index buffer and vertex 
 	// declaration we are using.
-	HR(gd3dDevice->SetStreamSource(0, mVB, 0, sizeof(VertexPos)));
-	HR(gd3dDevice->SetVertexDeclaration(VertexPos::Decl));
+	
+	//HR(gd3dDevice->SetStreamSource(0, mColorLB, 0, sizeof(VertexCol)));
+	HR(gd3dDevice->SetStreamSource(0, mLB, 0, sizeof(VertexCol)));
+	HR(gd3dDevice->SetVertexDeclaration(VertexCol::Decl));
 	// Setup the rendering FX
 	HR(mFX->SetTechnique(mhTech));
 	HR(mFX->SetMatrix(mhWVP, &(matRotateX*matRotateZ*mView*mProj)));
-	HR(mFX->SetFloat(mhTime, mTime));
+	//HR(mFX->SetFloat(mhTime, mTime));
 	// Begin passes.
 	UINT numPasses = 0;
 	HR(mFX->Begin(&numPasses, 0));
 	for (UINT i = 0; i < numPasses; ++i)
 	{
 		HR(mFX->BeginPass(i));
-		HR(gd3dDevice->DrawPrimitive(D3DPT_POINTLIST, 0, mNumVertices));
-			HR(gd3dDevice->SetStreamSource(0, mLB, 0, sizeof(VertexPos)));
 			HR(gd3dDevice->DrawPrimitive(D3DPT_LINELIST, 0, mLines.size()));
-		
 		HR(mFX->EndPass());
 	}
 	HR(mFX->End());
@@ -307,40 +306,31 @@ void RGG::buildGeoBuffers()
 	}
 	mGfxStats->setAverageDegree(static_cast<float>(mLines.size() * 2) /static_cast<float>(mNumVertices));
 	mGfxStats->setMaxDegreeAndMinDegree(mx, mn);
-	HR(gd3dDevice->CreateVertexBuffer(mLines.size()* 2 * sizeof(VertexPos),
+	HR(gd3dDevice->CreateVertexBuffer(mLines.size()* 2 * sizeof(VertexCol),
 		D3DUSAGE_WRITEONLY, 0, D3DPOOL_MANAGED, &mLB, 0));
-	HR(gd3dDevice->CreateVertexBuffer(mNumVertices * sizeof(VertexPos),
-		D3DUSAGE_WRITEONLY, 0, D3DPOOL_MANAGED, &mVB, 0));	// Now lock it to obtain a pointer to its internal data, and write the
-	// grid's vertex data.
-	VertexPos* v = 0;
-	HR(mVB->Lock(0, 0, (void**)&v, 0));
-	for (DWORD i = 0; i < mNumVertices; ++i)
-		v[i] = mVerts[i];
-	HR(mVB->Unlock());
-
+	VertexCol* v = 0;
 	HR(mLB->Lock(0, 0, (void**)&v, 0));
 
 	for (DWORD i = 0; i < mLines.size(); i++) {
-		v[i * 2] = mLines[i].begin;
-		v[i * 2 + 1] = mLines[i].end;
+		v[i * 2] = VertexCol( mVerts[mLines[i].begin],RED);
+		v[i * 2 + 1] = VertexCol(mVerts[mLines[i].end],WHITE);
 	}
 	HR(mLB->Unlock());
-	
 }
 
 void RGG::buildFX()
 {
 	// Create the FX from a .fx file.
 	ID3DXBuffer* errors = 0;
-	HR(D3DXCreateEffectFromFile(gd3dDevice, "heightcolor.fx",
+	HR(D3DXCreateEffectFromFile(gd3dDevice, "color.fx",
 		0, 0, D3DXSHADER_DEBUG, 0, &mFX, &errors));
 	if (errors)
 		MessageBox(0, (char*)errors->GetBufferPointer(), 0, 0);
 
 	// Obtain handles.
-	mhTech = mFX->GetTechniqueByName("HeightColorTech");
+	mhTech = mFX->GetTechniqueByName("ColorTech");
 	mhWVP = mFX->GetParameterByName(0, "gWVP");
-	mhTime = mFX->GetParameterByName(0, "gTime");
+	//mhTime = mFX->GetParameterByName(0, "gTime");
 }
 
 void RGG::buildViewMtx()
