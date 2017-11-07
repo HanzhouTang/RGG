@@ -11,6 +11,8 @@
 #include<tuple>
 #include<unordered_set>
 #include<unordered_map>
+#include<chrono>
+#include<random>
 #define WM_COLORING_FINSHED WM_USER+1
 #define MAP_LENGTH  1000
 //=============================================================
@@ -69,6 +71,10 @@ extern IDirect3DDevice9* gd3dDevice;
 //===============================================================
 // Geometry generation.
 DWORD FtoDw(float f);
+
+void GenVertexSphere(int numVertices, \
+	std::vector<D3DXVECTOR3>& verts);
+
 void GenVertexSquare(int numVertices,
 	std::vector<D3DXVECTOR3>& verts);
 
@@ -81,6 +87,7 @@ void GenLinkingLines(std::vector<D3DXVECTOR3>& verts,
 void GenSmallestLastOrder(const std::vector<std::unordered_set<int>>& matrix,std::list<int>& order,\
 	int mindegree,int maxdegree);
 void GenVertexColor(const std::vector<std::unordered_set<int>>& matrix,const std::list<int>& order, std::vector<int>& color);
+
 
 float Distance(D3DXVECTOR3 a, D3DXVECTOR3 b);
 
@@ -98,7 +105,9 @@ std::vector<Line> GenLineBySets(const std::vector<int>& a, const std::vector<int
 
 std::vector<int> GetByR(std::vector<std::vector<int>>& map, int i, int j, int r);
 
-
+float SphereDistance(D3DXVECTOR3 a, D3DXVECTOR3 b);
+void GenSphereLinkingLines(const std::vector<D3DXVECTOR3>& verts, \
+	float d, std::vector<Line>&lines, std::vector<std::unordered_set<int>>& matrix);
 //===============================================================
 // MultiThreading
 struct ColoringParameter {

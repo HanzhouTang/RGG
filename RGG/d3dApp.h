@@ -64,3 +64,9 @@ extern D3DApp* gd3dApp;
 extern IDirect3DDevice9* gd3dDevice;
 
 #endif // D3DAPP_H
+//ÂòJS ES6
+//phoenix.present
+
+
+
+//directx 

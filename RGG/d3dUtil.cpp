@@ -143,6 +143,7 @@ void GenLinkingByCell(int r, float scalarR, std::vector<Line>&lines,\
 	const std::vector<D3DXVECTOR3>&verts) {
 	using std::cout;
 	using std::endl;
+	matrix.resize(verts.size());
 	for (int i = 0; i < MAP_LENGTH; i += r) {
 		for (int j = 0; j < MAP_LENGTH; j += r) {
 			//cout << " i= " << i << " j= " << j << endl;
@@ -234,6 +235,35 @@ void GenLinkingLines(std::vector<D3DXVECTOR3>& verts,
 	}
 }
 
+
+//when R is 5.0
+float SphereDistance(D3DXVECTOR3 a, D3DXVECTOR3 b) {
+	double theta = acos(D3DXVec3Dot(&a,&b)/25);
+	return 5*theta;
+}
+
+
+//when R is 5.0
+void GenSphereLinkingLines(const std::vector<D3DXVECTOR3>& verts,\
+	float d, std::vector<Line>&lines, std::vector<std::unordered_set<int>>& matrix) {
+	matrix.resize(verts.size());
+	float n = verts.size();
+	//ÐèÒª¼ÆËã
+	float r = 5* acos((n-2*d-2)/n);
+	for (int i = 0; i < verts.size(); i++) {
+		for (int j = i + 1; j < verts.size(); j++) {
+			if (SphereDistance(verts[i], verts[j]) <= r) {
+				lines.push_back(Line(i, j));
+				matrix[i].insert(j);
+				matrix[j].insert(i);
+			}
+		}
+	}
+}
+
+
+
+
 void GenSmallestLastOrder(const std::vector<std::unordered_set<int>>& matrix, std::list<int>& order,\
 	int mindegree,int maxdegree) {
 	using std::cout;
@@ -314,6 +344,30 @@ DWORD WINAPI Coloring(LPVOID colorPara){
 	SendMessage(ptr->mHwnd, WM_COLORING_FINSHED, 0, 0);
 	return 0;
 }
+
+void GenVertexSphere(int numVertices, std::vector<D3DXVECTOR3>& verts) {
+
+	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+	std::mt19937 generator(seed);
+	std::uniform_real_distribution<double> uniform01(0.0, 1.0);
+	verts.resize(numVertices);
+	for (int k = 0; k < numVertices; k++) {
+		double theta = 2 * D3DX_PI * uniform01(generator);
+		double phi = acos(1 - 2 * uniform01(generator));
+		double x = sin(phi) * cos(theta);
+		double y = sin(phi) * sin(theta);
+		double z = cos(phi);
+		verts[k].x = x*5;
+		verts[k].z = z*5;
+		verts[k].y = y*5;
+		//std::cout << "x= " << x * 5 << " y= " << y * 5 << " z= " << z * 5 << std::endl;
+		//std::cout << "R= " << sqrtf(25 * (x*x + y*y + z*z))<<std::endl;
+		//system("pause");
+	}
+
+}
+
+
 
 DWORD FtoDw(float f){
 	return *((DWORD*)&f);

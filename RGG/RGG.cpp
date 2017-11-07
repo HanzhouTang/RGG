@@ -11,9 +11,13 @@
 //想想办法
 #define SQUARE    1
 #define DISK      2
-int gType=SQUARE;
-int gVertexNum=64000;
-float gDegree=8.0f;
+#define SPHERE    3
+int gType = SPHERE;
+int gVertexNum = 4000;
+float gDegree = 16.0f;
+
+
+//填那个表
 
 class RGG : public D3DApp
 {
@@ -67,7 +71,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 	PSTR cmdLine, int showCmd)
 {
 
-	auto cmd= GetCommandLine();
+	auto cmd = GetCommandLine();
 	std::istringstream iss(cmd);
 
 	do
@@ -89,7 +93,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 			gType = DISK;
 		}
 	} while (iss);
-	
+
 	RGG app(hInstance, "RGG", D3DDEVTYPE_HAL, D3DCREATE_HARDWARE_VERTEXPROCESSING);
 	gd3dApp = &app;
 
@@ -128,13 +132,13 @@ int main() {
 
 	RGG app(GetModuleHandle(NULL), "RGG", D3DDEVTYPE_HAL, D3DCREATE_HARDWARE_VERTEXPROCESSING);
 	gd3dApp = &app;
-	
+
 	DirectInput di(DISCL_NONEXCLUSIVE | DISCL_FOREGROUND, DISCL_NONEXCLUSIVE | DISCL_FOREGROUND);
 	gDInput = &di;
-	
+
 	return gd3dApp->run();
 
-	
+
 }
 
 RGG::RGG(HINSTANCE hInstance, std::string winCaption, D3DDEVTYPE devType, DWORD requestedVP)
@@ -157,13 +161,14 @@ RGG::RGG(HINSTANCE hInstance, std::string winCaption, D3DDEVTYPE devType, DWORD 
 	buildFX();
 	onResetDevice();
 	InitAllVertexDeclarations();
+
 	mColorParameter =new ColoringParameter(mMatrix, mSmallestLastOrder,\
 		mGfxStats->GetMinDegree(), mGfxStats->GetMaxDegree(),mColor,mhMainWnd);
 	CreateThread(0, 0, Coloring, mColorParameter, 0, NULL);
 }
 
 RGG::~RGG()
-{ 
+{
 	delete mColorParameter;
 	delete mGfxStats;
 	ReleaseCOM(mLB);
@@ -266,9 +271,8 @@ void RGG::drawScene()
 	HR(gd3dDevice->BeginScene());
 	// Let Direct3D know the vertex buffer, index buffer and vertex 
 	// declaration we are using.
-	
-	//HR(gd3dDevice->SetStreamSource(0, mColorLB, 0, sizeof(VertexCol)));
-	
+
+
 	HR(gd3dDevice->SetVertexDeclaration(VertexCol::Decl));
 	//把 D3DRS_POINTSIZE 放到 shader 里
 	gd3dDevice->SetRenderState(D3DRS_POINTSIZE, FtoDw(7.0f));
@@ -283,10 +287,10 @@ void RGG::drawScene()
 	for (UINT i = 0; i < numPasses; ++i)
 	{
 		HR(mFX->BeginPass(i));
-		    HR(gd3dDevice->SetStreamSource(0, mLB, 0, sizeof(VertexCol)));
-			HR(gd3dDevice->DrawPrimitive(D3DPT_LINELIST, 0, mLines.size()));
-			HR(gd3dDevice->SetStreamSource(0, mVB, 0, sizeof(VertexCol)));
-			HR(gd3dDevice->DrawPrimitive(D3DPT_POINTLIST, 0, mNumVertices));
+     	HR(gd3dDevice->SetStreamSource(0, mLB, 0, sizeof(VertexCol)));
+		HR(gd3dDevice->DrawPrimitive(D3DPT_LINELIST, 0, mLines.size()));
+		HR(gd3dDevice->SetStreamSource(0, mVB, 0, sizeof(VertexCol)));
+		HR(gd3dDevice->DrawPrimitive(D3DPT_POINTLIST, 0, mNumVertices));
 		HR(mFX->EndPass());
 	}
 	HR(mFX->End());
@@ -309,19 +313,25 @@ void RGG::buildGeoBuffers()
 	mMatrix.resize(mNumVertices);
 	QueryPerformanceCounter((LARGE_INTEGER*)&prevTimeStamp);
 	if (gType == SQUARE) {
-		auto t = GenVertexAndCellSquare(mNumVertices, mVerts, mAvergaeDegree,mMapOfNodes);
-		
-		GenLinkingByCell(std::get<0>(t), std::get<1>(t), mLines,mMatrix,mMapOfNodes,mVerts);
+		auto t = GenVertexAndCellSquare(mNumVertices, mVerts, mAvergaeDegree, mMapOfNodes);
+
+		GenLinkingByCell(std::get<0>(t), std::get<1>(t), mLines, mMatrix, mMapOfNodes, mVerts);
 		mGfxStats->setR(sqrtf(std::get<1>(t)) / 10);
 	}
 	else if (gType == DISK) {
-		auto t = GenVertexAndCellDisk(mNumVertices, mVerts, mAvergaeDegree,mMapOfNodes);
-		GenLinkingByCell(std::get<0>(t), std::get<1>(t), mLines,mMatrix,mMapOfNodes,mVerts);
+		auto t = GenVertexAndCellDisk(mNumVertices, mVerts, mAvergaeDegree, mMapOfNodes);
+		GenLinkingByCell(std::get<0>(t), std::get<1>(t), mLines, mMatrix, mMapOfNodes, mVerts);
 		mGfxStats->setR(sqrtf(std::get<1>(t)) / 5);
 	}
+	else if (gType == SPHERE) {
+		GenVertexSphere(mNumVertices, mVerts);
+		GenSphereLinkingLines(mVerts, mAvergaeDegree,mLines,mMatrix);
+		//缺少R
+	}
+
 
 	QueryPerformanceCounter((LARGE_INTEGER*)&currTimeStamp);
-	float dt = (currTimeStamp- prevTimeStamp)*secsPerCnt;
+	float dt = (currTimeStamp - prevTimeStamp)*secsPerCnt;
 	mGfxStats->setInitTime(dt);
 	int mx = 0;
 	int mn = INT_MAX;
@@ -329,12 +339,14 @@ void RGG::buildGeoBuffers()
 		mx = max(x.size(), mx);
 		mn = min(x.size(), mn);
 	}
-	mGfxStats->setAverageDegree(static_cast<float>(mLines.size() * 2) /static_cast<float>(mNumVertices));
+	
+
+	mGfxStats->setAverageDegree(static_cast<float>(mLines.size() * 2) / static_cast<float>(mNumVertices));
 	mGfxStats->setMaxDegreeAndMinDegree(mx, mn);
 	////////////////////////////////////////////////////////////////////////////
 	VertexCol* v = 0;
-	HR(gd3dDevice->CreateVertexBuffer(mVerts.size()* sizeof(VertexCol),
-		 D3DUSAGE_WRITEONLY | D3DUSAGE_POINTS, 0, D3DPOOL_MANAGED, &mVB, 0));
+	HR(gd3dDevice->CreateVertexBuffer(mVerts.size() * sizeof(VertexCol),
+		D3DUSAGE_WRITEONLY | D3DUSAGE_POINTS, 0, D3DPOOL_MANAGED, &mVB, 0));
 
 	HR(mVB->Lock(0, 0, (void**)&v, 0));
 
@@ -342,19 +354,19 @@ void RGG::buildGeoBuffers()
 		v[i] = VertexCol(mVerts[i], WHITE);
 	}
 	HR(mVB->Unlock());
-	//     D3DUSAGE_DYNAMIC 或许不被支持?
-	////////////////////////////////////////////////////////////////////////////
-	HR(gd3dDevice->CreateVertexBuffer(mLines.size()* 2 * sizeof(VertexCol),
+
+	HR(gd3dDevice->CreateVertexBuffer(mLines.size() * 2 * sizeof(VertexCol),
 		D3DUSAGE_WRITEONLY, 0, D3DPOOL_MANAGED, &mLB, 0));
 
-	
+
 	HR(mLB->Lock(0, 0, (void**)&v, 0));
 
 	for (DWORD i = 0; i < mLines.size(); i++) {
-		v[i * 2] = VertexCol( mVerts[mLines[i].begin],WHITE);
-		v[i * 2 + 1] = VertexCol(mVerts[mLines[i].end],WHITE);
+		v[i * 2] = VertexCol(mVerts[mLines[i].begin], WHITE);
+		v[i * 2 + 1] = VertexCol(mVerts[mLines[i].end], WHITE);
 	}
 	HR(mLB->Unlock());
+	
 }
 
 void RGG::buildFX()
@@ -394,6 +406,8 @@ void RGG::buildProjMtx()
 //ball
 
 
+//今天先把基本的搞完
+//明天必须把近大远小搞定
 //需要搞
 //抗锯齿
 //近大远处小（或者手动设置，或者看一下point sprite）
