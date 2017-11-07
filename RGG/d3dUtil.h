@@ -38,6 +38,11 @@ const D3DCOLOR OLIVE = D3DCOLOR_XRGB(128, 128, 0);
 const D3DCOLOR CORAL = D3DCOLOR_XRGB(255, 215, 180);
 const D3DCOLOR NAVY = D3DCOLOR_XRGB(0, 0, 128);
 const D3DCOLOR GREY = D3DCOLOR_XRGB(128, 128, 128);
+
+//等会加一点东西，然后看一下
+
+
+
 const D3DCOLOR gColorTable[] = {
 	WHITE,RED,GREEN,YELLOW,BLUE,ORANGE,PURPLE,CYAN,MANGENTA,
 	LIME,PINK,TEAL,LACENDER,BROWN,BEIGE,MAROON,MINT,OLIVE,
@@ -108,6 +113,14 @@ std::vector<int> GetByR(std::vector<std::vector<int>>& map, int i, int j, int r)
 float SphereDistance(D3DXVECTOR3 a, D3DXVECTOR3 b);
 void GenSphereLinkingLines(const std::vector<D3DXVECTOR3>& verts, \
 	float d, std::vector<Line>&lines, std::vector<std::unordered_set<int>>& matrix);
+
+void GenSphereLinkingLinesByCell(const std::vector<D3DXVECTOR3>& verts, \
+	float d, std::vector<Line>&lines, std::vector<std::unordered_set<int>>& matrix);
+void GenThetaTable(std::vector<float>& theta_phi_table, float r);//to divide sphere into circle
+void DivideSphere(std::vector<std::vector<std::vector<int>>>& cells, const std::vector<D3DXVECTOR3>& verts, \
+	const std::vector<float>& theta_phi_tables, float r);
+void LinkSphereLinesByCell(std::vector<std::vector<std::vector<int>>> cells, const std::vector<D3DXVECTOR3>& verts, \
+	float r, std::vector<Line>&lines, std::vector<std::unordered_set<int>>& matrix);
 //===============================================================
 // MultiThreading
 struct ColoringParameter {

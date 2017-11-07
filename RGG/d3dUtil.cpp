@@ -304,12 +304,16 @@ void GenSmallestLastOrder(const std::vector<std::unordered_set<int>>& matrix, st
 	}
 }
 
-void GenVertexColor(const std::vector<std::unordered_set<int>>& matrix,\
-	const std::list<int>& order,std::vector<int>& color) {
+void GenVertexColor(const std::vector<std::unordered_set<int>>& matrix, \
+	const std::list<int>& order, std::vector<int>& color){
+
+	using std::cout;
+    using std::endl;
+	cout << "order number" << order.size() << endl;
 	using std::cout;
 	using std::endl;
 	color.resize(matrix.size(),-1);
-	std::unordered_map<int, int> color_result;
+	std::unordered_map<int,int> color_result;
 	for (auto ptr = order.begin(); ptr != order.end(); ptr++) {
 		int c = -1;
 		int node = *ptr;
@@ -324,11 +328,23 @@ void GenVertexColor(const std::vector<std::unordered_set<int>>& matrix,\
 				}
 			}
 		} while (!canColor);
-		if (color_result.find(c) == color_result.end()) color_result[c] = 1;
-		else color_result[c]++;
+		
 		color[node] = c;
+
+		if (color_result.find(c) == color_result.end()) {
+			color_result[c] = 1;
+		}
+		else color_result[c]++;
 	}
-	cout <<"needed color number: "<< color_result.size() << endl;
+	int acc = 0;
+	for (auto& x : color_result) {
+		acc += x.second;
+	}
+	cout << "colored vertexs number " << acc << endl;
+	cout << "color needed: " << color_result.size() << endl;
+	//system("pause");
+	
+	
 }
 
 
@@ -347,8 +363,9 @@ DWORD WINAPI Coloring(LPVOID colorPara){
 
 void GenVertexSphere(int numVertices, std::vector<D3DXVECTOR3>& verts) {
 
-	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-	std::mt19937 generator(seed);
+	//unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+	std::mt19937 generator(1000000);//暂时如此
+	//std::mt19937 generator(seed);
 	std::uniform_real_distribution<double> uniform01(0.0, 1.0);
 	verts.resize(numVertices);
 	for (int k = 0; k < numVertices; k++) {
@@ -368,6 +385,122 @@ void GenVertexSphere(int numVertices, std::vector<D3DXVECTOR3>& verts) {
 }
 
 
+void GenThetaTable(std::vector<float>& theta_phi_table,float r) {//先快点做，等会再改
+	using std::cout;
+	using std::endl;
+	float  theta = 01;
+	float phi = 0.001;
+	//cout << "r= " << r << endl;
+	while (phi < D3DX_PI) {
+		theta = r / (sin(phi) * 5);
+		if(theta>2*D3DX_PI)
+		theta = 2*D3DX_PI;
+		theta_phi_table.push_back(theta);
+		//std::cout << " theta= " << theta << " phi =" << phi << std::endl;
+		phi += r / 5;
+	}
+
+}
+
+
+
+void GenSphereLinkingLinesByCell(const std::vector<D3DXVECTOR3>& verts, \
+	float d, std::vector<Line>&lines, std::vector<std::unordered_set<int>>& matrix) {
+	matrix.resize(verts.size());
+	float n = verts.size();
+	float r = 5 * acos((n - 2 * d - 2) / n);
+	std::vector<float> theta_phi_table;
+	GenThetaTable(theta_phi_table, r);
+	std::vector<std::vector<std::vector<int>>> cells;
+	DivideSphere(cells, verts, theta_phi_table, r);
+	LinkSphereLinesByCell(cells, verts, r, lines, matrix);
+}
+
+void DivideSphere(std::vector<std::vector<std::vector<int>>>& cells, const std::vector<D3DXVECTOR3>& verts,\
+	const std::vector<float>& theta_phi_tables,float r) {
+	using std::cout;
+	using std::endl;
+	cells.resize(theta_phi_tables.size());
+	for (int i = 0; i < cells.size(); i++) {
+		float theta_scalar = theta_phi_tables[i];
+		cells[i].resize((int)(2 * D3DX_PI / theta_scalar) + 1);
+	}
+
+	for (int i = 0; i < verts.size(); i++) {
+		auto node = verts[i];
+		std::unordered_map<int, float> temp;
+		float theta = atan(node.y / node.x);
+		if (theta < 0) theta = theta + 2 * D3DX_PI;
+		float phi = acos(node.z / 5);
+		int phi_number = phi / (r / 5);
+		//cout <<endl<< " phi_number = " << phi_number << endl;
+		float theta_scalar = theta_phi_tables[phi_number];
+		int theta_number = theta / theta_scalar;
+		/*
+		std::cout <<" theta = " << theta << " phi= " << phi << endl;
+		std::cout <<" theta scalar = "<<theta_scalar<< " phi_scalar= " << (r / 5) << std::endl;
+		std::cout <<" theta_number= "<<theta_number << "phi_number = " << phi_number << std::endl;
+		system("pause");*/
+		cells[phi_number][theta_number].push_back(i);
+	}
+}
+
+std::vector<Line> GenSphereLineBySets(const std::vector<int>& a, const std::vector<int>& b, float scalarR, \
+	const std::vector<D3DXVECTOR3>& verts, std::vector<std::unordered_set<int>>& matrix) {
+	using std::cout;
+	std::vector<Line> t;
+	for (std::size_t i = 0; i < a.size(); i++) {
+		for (std::size_t j = 0; j < b.size(); j++) {
+			if (SphereDistance(verts[a[i]], verts[b[j]]) <= scalarR) {
+				t.push_back(Line(a[i], b[j]));
+				matrix[a[i]].insert(b[j]);
+				matrix[b[j]].insert(a[i]);
+			}
+		}
+	}
+	return t;
+}
+
+void LinkSphereLinesByCell(std::vector<std::vector<std::vector<int>>> cells, const std::vector<D3DXVECTOR3>& verts, \
+	float r, std::vector<Line>&lines, std::vector<std::unordered_set<int>>& matrix) {
+	using std::cout;
+	using std::endl;
+	int acc = 0;
+	//先写的简单点，然后在改
+
+	for (int i = 0; i < cells.size(); i++) {
+		for (int j = 0; j < cells[i].size(); j++) {
+			//cout << " i= " << i << " j= " << j << " size= " << cells[i][j].size() << endl;
+		//	acc += cells[i][j].size();
+			for (int x = 0; x < cells[i][j].size(); x++) {
+				for (int y = x + 1; y < cells[i][j].size(); y++) {
+					auto a = verts[cells[i][j][x]], b = verts[cells[i][j][y]];
+					if (SphereDistance(a, b)< r) {
+						lines.push_back(Line(cells[i][j][x], cells[i][j][y]));
+						matrix[cells[i][j][x]].insert(cells[i][j][y]);
+						matrix[cells[i][j][y]].insert(cells[i][j][x]);
+					}
+				}
+			}
+			std::vector<Line> tempLines;
+			if (j + 1 < cells[i].size()) {
+				//cells[i][j+1];
+				tempLines = GenSphereLineBySets(cells[i][j], cells[i][j + 1], r, verts, matrix);
+				lines.insert(lines.end(), tempLines.begin(), tempLines.end());
+			}
+			
+			if (i + 1 < cells.size()) {
+				for (int k = 0; k < cells[i + 1].size(); k++) {
+					tempLines = GenSphereLineBySets(cells[i][j], cells[i+1][k], r, verts, matrix);
+					lines.insert(lines.end(), tempLines.begin(), tempLines.end());
+				}
+			}
+		}
+	}
+	//cout << " totoal= " << acc << endl;
+}
+
+
 
 DWORD FtoDw(float f){
 	return *((DWORD*)&f);
@@ -375,3 +508,5 @@ DWORD FtoDw(float f){
 
 
 //考虑一波球
+
+//上色 可以检查一波

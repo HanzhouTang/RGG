@@ -12,12 +12,15 @@
 #define SQUARE    1
 #define DISK      2
 #define SPHERE    3
-int gType = SPHERE;
-int gVertexNum = 4000;
-float gDegree = 16.0f;
+int gType = DISK;
+int gVertexNum = 40000;
+float gDegree = 12;
 
+//球的算法有点小问题，等会想一想
 
 //填那个表
+//等会加一个随机
+//放更多的颜色进去
 
 class RGG : public D3DApp
 {
@@ -325,8 +328,13 @@ void RGG::buildGeoBuffers()
 	}
 	else if (gType == SPHERE) {
 		GenVertexSphere(mNumVertices, mVerts);
-		GenSphereLinkingLines(mVerts, mAvergaeDegree,mLines,mMatrix);
-		//缺少R
+		GenSphereLinkingLinesByCell(mVerts, mAvergaeDegree, mLines, mMatrix);
+		
+		//cout <<"size= "<< mLines.size();
+		//system("pause");
+		//GenSphereLinkingLines(mVerts, mAvergaeDegree,mLines,mMatrix);
+		
+			//缺少在频幕上显示R
 	}
 
 
