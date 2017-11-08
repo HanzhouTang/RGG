@@ -12,11 +12,15 @@
 #define SQUARE    1
 #define DISK      2
 #define SPHERE    3
+
 int gType = DISK;
-int gVertexNum = 40000;
-float gDegree = 12;
+int gVertexNum = 64000;
+float gDegree = 32;
+
 
 //球的算法有点小问题，等会想一想
+//必须 填一下 颜色表 实验一下
+
 
 //填那个表
 //等会加一个随机
@@ -52,6 +56,7 @@ private:
 	std::vector<int> mColor;
 	std::unordered_map<int, std::vector<int>> mMapOfNodes; // nodes in erver cells
 	std::list<int> mSmallestLastOrder;
+	std::vector<D3DCOLOR> mColorTable;
 	IDirect3DVertexBuffer9* mLB;
 	IDirect3DVertexBuffer9*   mVB;
 	ID3DXEffect*            mFX;
@@ -95,6 +100,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 		else if (subs == "-disk") {
 			gType = DISK;
 		}
+		else if (subs == "-sphere") {
+			gType = SPHERE;
+		}
 	} while (iss);
 
 	RGG app(hInstance, "RGG", D3DDEVTYPE_HAL, D3DCREATE_HARDWARE_VERTEXPROCESSING);
@@ -131,6 +139,9 @@ int main() {
 		else if (subs == "-disk") {
 			gType = DISK;
 		}
+		else if (subs == "-sphere") {
+			gType = SPHERE;
+		}
 	} while (iss);
 
 	RGG app(GetModuleHandle(NULL), "RGG", D3DDEVTYPE_HAL, D3DCREATE_HARDWARE_VERTEXPROCESSING);
@@ -164,6 +175,15 @@ RGG::RGG(HINSTANCE hInstance, std::string winCaption, D3DDEVTYPE devType, DWORD 
 	buildFX();
 	onResetDevice();
 	InitAllVertexDeclarations();
+	mColorTable = {
+		WHITE,RED,GREEN,YELLOW,BLUE,ORANGE,PURPLE,CYAN,MANGENTA,
+		LIME,PINK,TEAL,LACENDER,BROWN,BEIGE,MAROON,MINT,OLIVE,
+		CORAL,NAVY,GREY
+	};
+	for (int i = 0; i < 500; i++) {
+		mColorTable.push_back(D3DCOLOR_XRGB(rand() % 256, rand() % 256, rand() % 256));
+	}
+
 
 	mColorParameter =new ColoringParameter(mMatrix, mSmallestLastOrder,\
 		mGfxStats->GetMinDegree(), mGfxStats->GetMaxDegree(),mColor,mhMainWnd);
@@ -248,13 +268,13 @@ void RGG::onColoringFinshed()
 	VertexCol* v = 0;
 	HR(mLB->Lock(0, 0, (void**)&v, 0));
 	for (DWORD i = 0; i < mLines.size(); i++) {
-		v[i * 2] = VertexCol(mVerts[mLines[i].begin], gColorTable[mColor[mLines[i].begin]]);
-		v[i * 2 + 1] = VertexCol(mVerts[mLines[i].end], gColorTable[mColor[mLines[i].end]]);
+		v[i * 2] = VertexCol(mVerts[mLines[i].begin], mColorTable[mColor[mLines[i].begin]]);
+		v[i * 2 + 1] = VertexCol(mVerts[mLines[i].end], mColorTable[mColor[mLines[i].end]]);
 	}
 	HR(mLB->Unlock());
 	HR(mVB->Lock(0, 0, (void**)&v, 0));
 	for (DWORD i = 0; i < mVerts.size(); i++) {
-		v[i] = VertexCol(mVerts[i], gColorTable[mColor[i]]);
+		v[i] = VertexCol(mVerts[i], mColorTable[mColor[i]]);
 	}
 	HR(mVB->Unlock());
 }

@@ -43,11 +43,7 @@ const D3DCOLOR GREY = D3DCOLOR_XRGB(128, 128, 128);
 
 
 
-const D3DCOLOR gColorTable[] = {
-	WHITE,RED,GREEN,YELLOW,BLUE,ORANGE,PURPLE,CYAN,MANGENTA,
-	LIME,PINK,TEAL,LACENDER,BROWN,BEIGE,MAROON,MINT,OLIVE,
-	CORAL,NAVY,GREY
-};
+
 //==============================================================
 //struct for line 
 struct Line {
