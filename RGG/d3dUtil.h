@@ -13,6 +13,7 @@
 #include<unordered_map>
 #include<chrono>
 #include<random>
+#include<fstream>
 #define WM_COLORING_FINSHED WM_USER+1
 #define MAP_LENGTH  1000
 //=============================================================
@@ -82,12 +83,13 @@ void GenVertexSquare(int numVertices,
 void GenVertexDisk(int numVertices,
 	std::vector<D3DXVECTOR3>& verts);
 
-void GenLinkingLines(std::vector<D3DXVECTOR3>& verts,
-	int averageDegree, std::vector<Line>&lines);
+void GenSquareLinkingLines(std::vector<D3DXVECTOR3>& verts,
+	int averageDegree, std::vector<Line>&lines, std::vector<std::unordered_set<int>>& matrix);
 
 void GenSmallestLastOrder(const std::vector<std::unordered_set<int>>& matrix,std::list<int>& order,\
-	int mindegree,int maxdegree);
-void GenVertexColor(const std::vector<std::unordered_set<int>>& matrix,const std::list<int>& order, std::vector<int>& color);
+	int mindegree,int maxdegree, std::vector<int>& degree_list);
+void GenVertexColor(const std::vector<std::unordered_set<int>>& matrix,const std::list<int>& order, \
+	std::vector<int>& color, std::unordered_map<int, int>& color_result);
 
 
 float Distance(D3DXVECTOR3 a, D3DXVECTOR3 b);

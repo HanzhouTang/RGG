@@ -24,6 +24,7 @@ public:
 	void display();
 	inline int GetMaxDegree() { return mMaxDegree; }
 	inline int GetMinDegree() { return mMinDegree; }
+	inline void SetEdgeNumber(std::size_t e) { mEdge = e; }
 
 private:
 	// Prevent copying
@@ -41,5 +42,6 @@ private:
 	float mR;
 	int mMaxDegree;
 	int mMinDegree;
+	std::size_t mEdge;
 };
 #endif // GFX_STATS_H

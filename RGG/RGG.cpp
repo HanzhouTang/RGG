@@ -13,9 +13,9 @@
 #define DISK      2
 #define SPHERE    3
 
-int gType = DISK;
-int gVertexNum = 64000;
-float gDegree = 32;
+int gType = SQUARE;
+int gVertexNum = 16000;
+float gDegree = 64;
 
 
 //球的算法有点小问题，等会想一想
@@ -336,10 +336,11 @@ void RGG::buildGeoBuffers()
 	mMatrix.resize(mNumVertices);
 	QueryPerformanceCounter((LARGE_INTEGER*)&prevTimeStamp);
 	if (gType == SQUARE) {
-		auto t = GenVertexAndCellSquare(mNumVertices, mVerts, mAvergaeDegree, mMapOfNodes);
-
-		GenLinkingByCell(std::get<0>(t), std::get<1>(t), mLines, mMatrix, mMapOfNodes, mVerts);
-		mGfxStats->setR(sqrtf(std::get<1>(t)) / 10);
+		//auto t = GenVertexAndCellSquare(mNumVertices, mVerts, mAvergaeDegree, mMapOfNodes);
+		GenVertexSquare(mNumVertices, mVerts);
+		//GenLinkingByCell(std::get<0>(t), std::get<1>(t), mLines, mMatrix, mMapOfNodes, mVerts);
+		GenSquareLinkingLines(mVerts, mAvergaeDegree, mLines, mMatrix);
+		//mGfxStats->setR(sqrtf(std::get<1>(t)) / 10);
 	}
 	else if (gType == DISK) {
 		auto t = GenVertexAndCellDisk(mNumVertices, mVerts, mAvergaeDegree, mMapOfNodes);
@@ -353,14 +354,14 @@ void RGG::buildGeoBuffers()
 		//cout <<"size= "<< mLines.size();
 		//system("pause");
 		//GenSphereLinkingLines(mVerts, mAvergaeDegree,mLines,mMatrix);
-		
-			//缺少在频幕上显示R
+		mGfxStats->setR(acos((mNumVertices - 2 * mAvergaeDegree - 2) / mNumVertices));
 	}
 
 
 	QueryPerformanceCounter((LARGE_INTEGER*)&currTimeStamp);
 	float dt = (currTimeStamp - prevTimeStamp)*secsPerCnt;
 	mGfxStats->setInitTime(dt);
+	mGfxStats->SetEdgeNumber(mLines.size());
 	int mx = 0;
 	int mn = INT_MAX;
 	for (auto& x : mMatrix) {

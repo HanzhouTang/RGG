@@ -66,6 +66,8 @@ std::tuple<int, float> GenVertexAndCellSquare(int numVertices,\
 	std::unordered_map<int,std::vector<int>>& gmap) {
 	int width = MAP_LENGTH;
 	int depth = MAP_LENGTH;
+	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+	srand(seed);
 	std::vector<std::vector<int>> map(MAP_LENGTH, std::vector<int>(MAP_LENGTH, -1));
 	verts.resize(numVertices);
 	// Offsets to translate grid from quadrant 4 to center of 
@@ -102,6 +104,8 @@ std::tuple<int, float> GenVertexAndCellDisk(int numVertices,\
 	using std::endl;
 	int width = MAP_LENGTH;
 	int depth = MAP_LENGTH;
+	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+	//srand(seed); 
 	std::vector<std::vector<int>> map(MAP_LENGTH, std::vector<int>(MAP_LENGTH, -1));
 	verts.resize(numVertices);
 	// Offsets to translate grid from quadrant 4 to center of 
@@ -136,7 +140,7 @@ std::tuple<int, float> GenVertexAndCellDisk(int numVertices,\
 	return std::make_tuple(r, scalarR);
 }
 
-
+//在cell的时候还是有bug，好好找一找
 
 void GenLinkingByCell(int r, float scalarR, std::vector<Line>&lines,\
 	std::vector<std::unordered_set<int>>& matrix,const std::unordered_map<int, std::vector<int>>& gmap,\
@@ -223,13 +227,16 @@ float Distance(D3DXVECTOR3 a, D3DXVECTOR3 b) {
 }
 
 
-void GenLinkingLines(std::vector<D3DXVECTOR3>& verts,
-	int averageDegree, std::vector<Line>&lines) {
+void GenSquareLinkingLines(std::vector<D3DXVECTOR3>& verts,
+	int averageDegree, std::vector<Line>&lines, std::vector<std::unordered_set<int>>& matrix) {
+	matrix.resize(verts.size());
 	float r = (averageDegree + 1) / (D3DX_PI*verts.size()) * 100;
 	for (int i = 0; i < verts.size(); i++) {
 		for (int j = i + 1; j < verts.size(); j++) {
 			if (Distance(verts[i], verts[j]) <= r) {
 				lines.push_back(Line(i, j));
+				matrix[i].insert(j);
+				matrix[j].insert(i);
 			}
 		}
 	}
@@ -265,14 +272,16 @@ void GenSphereLinkingLines(const std::vector<D3DXVECTOR3>& verts,\
 
 
 void GenSmallestLastOrder(const std::vector<std::unordered_set<int>>& matrix, std::list<int>& order,\
-	int mindegree,int maxdegree) {
+	int mindegree,int maxdegree,std::vector<int>& degree_list) {
 	using std::cout;
 	using std::endl;
+	bool terminal = false;
 	//cout << "mindegree= " << mindegree << "maxdegree= " << maxdegree << endl;
 	std::unordered_map<int, int> degree;
-	std::vector<bool> marker(matrix.size(),true);
+	std::unordered_set<int> marker;
 	std::vector<std::unordered_set<int>> bucket(maxdegree+1);
 	for (int i = 0; i < matrix.size(); i++) {
+		marker.insert(i);
 		degree[i] = matrix[i].size();
 		bucket[degree[i]].insert(i);
 	}
@@ -286,12 +295,15 @@ void GenSmallestLastOrder(const std::vector<std::unordered_set<int>>& matrix, st
 		int node = *ptr;
 		//cout << "node= " << node << endl;
 		order.push_front(node);
+		degree_list.push_back(mindegree);
+		//cout << "mindegree= "<<mindegree << endl;
+		//system("pause");
 		if (order.size() == matrix.size()) break;
 		bucket[mindegree].erase(ptr);
-		marker[node] = false;
+		marker.erase(node);
 		for (auto ptr = matrix[node].begin(); ptr != matrix[node].end(); ptr++) {
 			int v = *ptr;
-			if (marker[v]) {
+			if (marker.find(v)!=marker.end()) {
 				//cout << "v= " << v <<" degree of (v)= "<<degree[v]<<endl;
 				bucket[degree[v]].erase(v);
 				//cout << "here" << endl;
@@ -301,19 +313,38 @@ void GenSmallestLastOrder(const std::vector<std::unordered_set<int>>& matrix, st
 				mindegree = min(mindegree, degree[v]);
 			}
 		}
+
+		if (!terminal) {
+			int count = 0, temp_degree = 0;
+			for (auto&x : bucket) {
+				if (x.size() != 0) {
+					count++;
+					temp_degree = x.size();
+				}
+			}
+			if (count == 1 ) {
+				for (auto&x : bucket) {
+					if (x.size() > 0) {
+						if (degree[*x.begin()] == x.size() - 1) {
+							cout << "terminal cluque size: " << temp_degree << endl;
+							terminal = true;
+						}
+					}
+				}
+				
+			}
+		}
 	}
 }
 
 void GenVertexColor(const std::vector<std::unordered_set<int>>& matrix, \
-	const std::list<int>& order, std::vector<int>& color){
+	const std::list<int>& order, std::vector<int>& color, std::unordered_map<int, int>& color_result){
 
 	using std::cout;
     using std::endl;
-	cout << "order number" << order.size() << endl;
 	using std::cout;
 	using std::endl;
 	color.resize(matrix.size(),-1);
-	std::unordered_map<int,int> color_result;
 	for (auto ptr = order.begin(); ptr != order.end(); ptr++) {
 		int c = -1;
 		int node = *ptr;
@@ -336,14 +367,9 @@ void GenVertexColor(const std::vector<std::unordered_set<int>>& matrix, \
 		}
 		else color_result[c]++;
 	}
-	int acc = 0;
-	for (auto& x : color_result) {
-		acc += x.second;
-	}
-	cout << "colored vertexs number " << acc << endl;
-	cout << "color needed: " << color_result.size() << endl;
-	//system("pause");
 	
+	
+	//system("pause");
 	
 }
 
@@ -351,21 +377,56 @@ void GenVertexColor(const std::vector<std::unordered_set<int>>& matrix, \
 DWORD WINAPI Coloring(LPVOID colorPara){
 	using std::cout;
 	using std::endl;
+	std::vector<int> degree_list;
+	std::unordered_map<int, int> color_result;
 	ColoringParameter* ptr = static_cast<ColoringParameter*>(colorPara);
 	cout << ptr->mMatrix.size()<<endl;
-	GenSmallestLastOrder(ptr->mMatrix, ptr->mOrder, ptr->mMinDegree, ptr->mMaxDegree);
-	GenVertexColor(ptr->mMatrix, ptr->mOrder,ptr->mColor);
-	//暂时用 color table
-	//WM_COLORING_FINSHED
+	__int64 cntsPerSec = 0;
+	QueryPerformanceFrequency((LARGE_INTEGER*)&cntsPerSec);
+	float secsPerCnt = 1000.0f / (float)cntsPerSec;
+	__int64 prevTimeStamp = 0;
+	__int64 currTimeStamp = 0;
+	QueryPerformanceCounter((LARGE_INTEGER*)&prevTimeStamp);
+	GenSmallestLastOrder(ptr->mMatrix, ptr->mOrder, ptr->mMinDegree, ptr->mMaxDegree, degree_list);
+	GenVertexColor(ptr->mMatrix, ptr->mOrder,ptr->mColor,color_result);
+	QueryPerformanceCounter((LARGE_INTEGER*)&currTimeStamp);
+	float dt = (currTimeStamp - prevTimeStamp)*secsPerCnt;
 	SendMessage(ptr->mHwnd, WM_COLORING_FINSHED, 0, 0);
+	cout << "part II using time: " << dt << endl;
+	cout << "number of color: " << color_result.size() << endl;
+	int max_color=0;
+	std::ofstream colorf("color_result.csv", std::ofstream::out);
+	int temp_total = 0;
+	for (auto&x : color_result) {
+		colorf << x.second <<",";
+		max_color = max(max_color, x.second);
+		temp_total += x.second;
+	}
+	colorf.close();
+	//cout << "total colored: " << temp_total<<endl;
+	cout << "max color class size: " << max_color << endl;
+	
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!翻转 degree_list
+
+	std::reverse(degree_list.begin(), degree_list.end());
+	int mx = 0;
+	int i = 0;
+	std::ofstream of("degree_result.csv",std::ofstream::out);
+	of << "original degree,degree when deleted" << endl;
+	for (auto ite = ptr->mOrder.begin(); ite != ptr->mOrder.end(); ite++) {
+		of << ptr->mMatrix[*ite].size() << "," << degree_list[i]<<endl;
+		mx = max(mx, degree_list[i]);
+		i++;
+	}
+	of.close();
+	cout << "max degree when deleted " << mx << endl;
 	return 0;
 }
 
 void GenVertexSphere(int numVertices, std::vector<D3DXVECTOR3>& verts) {
 
-	//unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-	std::mt19937 generator(1000000);//暂时如此
-	//std::mt19937 generator(seed);
+	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+	std::mt19937 generator(seed);
 	std::uniform_real_distribution<double> uniform01(0.0, 1.0);
 	verts.resize(numVertices);
 	for (int k = 0; k < numVertices; k++) {
@@ -377,9 +438,6 @@ void GenVertexSphere(int numVertices, std::vector<D3DXVECTOR3>& verts) {
 		verts[k].x = x*5;
 		verts[k].z = z*5;
 		verts[k].y = y*5;
-		//std::cout << "x= " << x * 5 << " y= " << y * 5 << " z= " << z * 5 << std::endl;
-		//std::cout << "R= " << sqrtf(25 * (x*x + y*y + z*z))<<std::endl;
-		//system("pause");
 	}
 
 }
@@ -436,11 +494,6 @@ void DivideSphere(std::vector<std::vector<std::vector<int>>>& cells, const std::
 		//cout <<endl<< " phi_number = " << phi_number << endl;
 		float theta_scalar = theta_phi_tables[phi_number];
 		int theta_number = theta / theta_scalar;
-		/*
-		std::cout <<" theta = " << theta << " phi= " << phi << endl;
-		std::cout <<" theta scalar = "<<theta_scalar<< " phi_scalar= " << (r / 5) << std::endl;
-		std::cout <<" theta_number= "<<theta_number << "phi_number = " << phi_number << std::endl;
-		system("pause");*/
 		cells[phi_number][theta_number].push_back(i);
 	}
 }

@@ -113,11 +113,12 @@ void GfxStats::display()
 		"Camera Height = %f\n"
 		"Vertex Count = %d\n"
 		"Average Degree = %f\n"
-		"Distance bound = %f\n"
+		"R = %f\n"
 		"Initing time = %fms\n"
 		"Max degree = %d\n"
 		"Min degree = %d\n"
-		"Press key w or s to zoom", mFPS, mMilliSecPerFrame, mCameraHeight, mNumVertices,mAverageDegree,mR,mInitTime,mMaxDegree,mMinDegree);
+		"Edges = %d\n"
+		"Press key w or s to zoom", mFPS, mMilliSecPerFrame, mCameraHeight, mNumVertices,mAverageDegree,mR,mInitTime,mMaxDegree,mMinDegree,mEdge);
 
 	RECT R = {5, 5, 0, 0};
 	HR(mFont->DrawText(0, buffer, -1, &R, DT_NOCLIP, D3DCOLOR_XRGB(255,255,255)));
