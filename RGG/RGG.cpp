@@ -8,23 +8,23 @@
 #include<iostream>
 #include<list>
 #include "Vertex.h"
+#include"CSquare.h"
+#include"CDisk.h"
+#include"CSphere.h"
 //想想办法
 #define SQUARE    1
 #define DISK      2
 #define SPHERE    3
 
-int gType = SQUARE;
-int gVertexNum = 16000;
-float gDegree = 64;
+int gType = SPHERE;
+int gVertexNum = 8000;
+float gDegree = 32;
 
 
-//球的算法有点小问题，等会想一想
-//必须 填一下 颜色表 实验一下
 
 
-//填那个表
-//等会加一个随机
-//放更多的颜色进去
+
+
 
 class RGG : public D3DApp
 {
@@ -46,15 +46,16 @@ public:
 	void buildProjMtx();
 private:
 	GfxStats* mGfxStats;
-	DWORD mNumLines;
-	DWORD mNumVertices;
-	float mAvergaeDegree;
+	//DWORD mNumLines;
+	//DWORD mNumVertices;
+	//float mAvergaeDegree;
 	ColoringParameter* mColorParameter;
-	std::vector<D3DXVECTOR3> mVerts;
-	std::vector<Line> mLines;
-	std::vector<std::unordered_set<int>> mMatrix;
+	CShape* mShape;
+	//std::vector<D3DXVECTOR3> mVerts;
+	//std::vector<Line> mLines;
+	//std::vector<std::unordered_set<int>> mMatrix;
 	std::vector<int> mColor;
-	std::unordered_map<int, std::vector<int>> mMapOfNodes; // nodes in erver cells
+	//std::unordered_map<int, std::vector<int>> mMapOfNodes; // nodes in erver cells
 	std::list<int> mSmallestLastOrder;
 	std::vector<D3DCOLOR> mColorTable;
 	IDirect3DVertexBuffer9* mLB;
@@ -169,8 +170,6 @@ RGG::RGG(HINSTANCE hInstance, std::string winCaption, D3DDEVTYPE devType, DWORD 
 	mCameraZ = 0.0f;
 	mCameraHeight = 15.0f;
 	mTime = 0.0f;
-	mNumVertices = gVertexNum;
-	mAvergaeDegree = gDegree;
 	buildGeoBuffers();
 	buildFX();
 	onResetDevice();
@@ -185,9 +184,10 @@ RGG::RGG(HINSTANCE hInstance, std::string winCaption, D3DDEVTYPE devType, DWORD 
 	}
 
 
-	mColorParameter =new ColoringParameter(mMatrix, mSmallestLastOrder,\
+	/*mColorParameter =new ColoringParameter(mMatrix, mSmallestLastOrder,\
 		mGfxStats->GetMinDegree(), mGfxStats->GetMaxDegree(),mColor,mhMainWnd);
 	CreateThread(0, 0, Coloring, mColorParameter, 0, NULL);
+	*/
 }
 
 RGG::~RGG()
@@ -228,14 +228,14 @@ void RGG::onResetDevice()
 	HR(mFX->OnResetDevice());
 
 
-	// The aspect ratio depends on the backbuffer dimensions, which can 
+	// The aspect ratio depends on the backbuffer dimensions, which can
 	// possibly change after a reset.  So rebuild the projection matrix.
 	buildProjMtx();
 }
 
 void RGG::updateScene(float dt)
 {
-	mGfxStats->setVertexCount(mNumVertices);
+
 	//	mGfxStats->setTriCount(mNumTriangles);
 	mGfxStats->update(dt);
 
@@ -247,21 +247,21 @@ void RGG::updateScene(float dt)
 		mCameraHeight += 2.0f * dt;
 	if (gDInput->keyDown(DIK_W))
 		mCameraHeight -= 2.0f * dt;
-	// Divide to make mouse less sensitive. 
+	// Divide to make mouse less sensitive.
 	mCameraZ += gDInput->mouseDX() / 100.0f;
 	mCameraX += gDInput->mouseDY() / 100.0f;
 	mCameraHeight = max(mCameraHeight, 1.05f);
-	// Accumulate time for simulation.  
+	// Accumulate time for simulation.
 	mTime += dt;
 
-	// The camera position/orientation relative to world space can 
+	// The camera position/orientation relative to world space can
 	// change every frame based on input, so we need to rebuild the
 	// view matrix every frame with the latest changes.
 	buildViewMtx();
 }
 
 void RGG::onColoringFinshed()
-{
+{  /*
 	using std::cout;
 	using std::endl;
 	cout << "coloring finshed congratulation!" << endl;
@@ -276,7 +276,7 @@ void RGG::onColoringFinshed()
 	for (DWORD i = 0; i < mVerts.size(); i++) {
 		v[i] = VertexCol(mVerts[i], mColorTable[mColor[i]]);
 	}
-	HR(mVB->Unlock());
+	HR(mVB->Unlock());*/
 }
 
 
@@ -310,10 +310,10 @@ void RGG::drawScene()
 	for (UINT i = 0; i < numPasses; ++i)
 	{
 		HR(mFX->BeginPass(i));
-     	HR(gd3dDevice->SetStreamSource(0, mLB, 0, sizeof(VertexCol)));
-		HR(gd3dDevice->DrawPrimitive(D3DPT_LINELIST, 0, mLines.size()));
+		HR(gd3dDevice->SetStreamSource(0, mLB, 0, sizeof(VertexCol)));
+		HR(gd3dDevice->DrawPrimitive(D3DPT_LINELIST, 0, mShape->GetLinesNumber()));
 		HR(gd3dDevice->SetStreamSource(0, mVB, 0, sizeof(VertexCol)));
-		HR(gd3dDevice->DrawPrimitive(D3DPT_POINTLIST, 0, mNumVertices));
+		HR(gd3dDevice->DrawPrimitive(D3DPT_POINTLIST, 0, mShape->GetVerticesNumber()));
 		HR(mFX->EndPass());
 	}
 	HR(mFX->End());
@@ -328,21 +328,22 @@ void RGG::buildGeoBuffers()
 {
 
 	using std::cout;
-	__int64 cntsPerSec = 0;
-	QueryPerformanceFrequency((LARGE_INTEGER*)&cntsPerSec);
-	float secsPerCnt = 1000.0f / (float)cntsPerSec;
-	__int64 prevTimeStamp = 0;
-	__int64 currTimeStamp = 0;
-	mMatrix.resize(mNumVertices);
-	QueryPerformanceCounter((LARGE_INTEGER*)&prevTimeStamp);
 	if (gType == SQUARE) {
+		mShape = new CSquare(gVertexNum, gDegree);
+
 		//auto t = GenVertexAndCellSquare(mNumVertices, mVerts, mAvergaeDegree, mMapOfNodes);
-		GenVertexSquare(mNumVertices, mVerts);
+		//GenVertexSquare(mNumVertices, mVerts);
 		//GenLinkingByCell(std::get<0>(t), std::get<1>(t), mLines, mMatrix, mMapOfNodes, mVerts);
-		GenSquareLinkingLines(mVerts, mAvergaeDegree, mLines, mMatrix);
-		//mGfxStats->setR(sqrtf(std::get<1>(t)) / 10);
+		//GenSquareLinkingLines(mVerts, mAvergaeDegree, mLines, mMatrix);
+		//
 	}
 	else if (gType == DISK) {
+		mShape = new CDisk(gVertexNum, gDegree);
+	}
+	else if (gType == SPHERE) {
+		mShape = new CSphere(gVertexNum, gDegree);
+	}
+	/*else if (gType == DISK) {
 		auto t = GenVertexAndCellDisk(mNumVertices, mVerts, mAvergaeDegree, mMapOfNodes);
 		GenLinkingByCell(std::get<0>(t), std::get<1>(t), mLines, mMatrix, mMapOfNodes, mVerts);
 		mGfxStats->setR(sqrtf(std::get<1>(t)) / 5);
@@ -350,52 +351,55 @@ void RGG::buildGeoBuffers()
 	else if (gType == SPHERE) {
 		GenVertexSphere(mNumVertices, mVerts);
 		GenSphereLinkingLinesByCell(mVerts, mAvergaeDegree, mLines, mMatrix);
-		
+
 		//cout <<"size= "<< mLines.size();
 		//system("pause");
 		//GenSphereLinkingLines(mVerts, mAvergaeDegree,mLines,mMatrix);
 		mGfxStats->setR(acos((mNumVertices - 2 * mAvergaeDegree - 2) / mNumVertices));
 	}
-
-
-	QueryPerformanceCounter((LARGE_INTEGER*)&currTimeStamp);
-	float dt = (currTimeStamp - prevTimeStamp)*secsPerCnt;
-	mGfxStats->setInitTime(dt);
-	mGfxStats->SetEdgeNumber(mLines.size());
-	int mx = 0;
+	*/
+	mShape->Init();
+	mGfxStats->setVertexCount(gVertexNum);
+	mGfxStats->setR(mShape->GetR());
+	mGfxStats->setInitTime(mShape->GetInitTime());
+	mGfxStats->SetEdgeNumber(mShape->GetLines().size());
+	auto temp = mShape->GetMinMaxDegree();
+	mGfxStats->setMaxDegreeAndMinDegree(std::get<1>(temp), std::get<0>(temp));
+	mGfxStats->setAverageDegree(mShape->GetAverageDegree());
+	/*int mx = 0;
 	int mn = INT_MAX;
 	for (auto& x : mMatrix) {
 		mx = max(x.size(), mx);
 		mn = min(x.size(), mn);
 	}
-	
+
 
 	mGfxStats->setAverageDegree(static_cast<float>(mLines.size() * 2) / static_cast<float>(mNumVertices));
-	mGfxStats->setMaxDegreeAndMinDegree(mx, mn);
+	mGfxStats->setMaxDegreeAndMinDegree(mx, mn);*/
 	////////////////////////////////////////////////////////////////////////////
+	auto& vertices = mShape->GetVertices();
+	auto& lines = mShape->GetLines();
 	VertexCol* v = 0;
-	HR(gd3dDevice->CreateVertexBuffer(mVerts.size() * sizeof(VertexCol),
+	HR(gd3dDevice->CreateVertexBuffer(vertices.size() * sizeof(VertexCol),
 		D3DUSAGE_WRITEONLY | D3DUSAGE_POINTS, 0, D3DPOOL_MANAGED, &mVB, 0));
 
 	HR(mVB->Lock(0, 0, (void**)&v, 0));
 
-	for (DWORD i = 0; i < mVerts.size(); i++) {
-		v[i] = VertexCol(mVerts[i], WHITE);
+	for (DWORD i = 0; i < vertices.size(); i++) {
+		v[i] = VertexCol(vertices[i], WHITE);
 	}
 	HR(mVB->Unlock());
 
-	HR(gd3dDevice->CreateVertexBuffer(mLines.size() * 2 * sizeof(VertexCol),
+	HR(gd3dDevice->CreateVertexBuffer(lines.size() * 2 * sizeof(VertexCol),
 		D3DUSAGE_WRITEONLY, 0, D3DPOOL_MANAGED, &mLB, 0));
-
-
 	HR(mLB->Lock(0, 0, (void**)&v, 0));
 
-	for (DWORD i = 0; i < mLines.size(); i++) {
-		v[i * 2] = VertexCol(mVerts[mLines[i].begin], WHITE);
-		v[i * 2 + 1] = VertexCol(mVerts[mLines[i].end], WHITE);
+	for (DWORD i = 0; i < lines.size(); i++) {
+		v[i * 2] = VertexCol(vertices[lines[i].begin], WHITE);
+		v[i * 2 + 1] = VertexCol(vertices[lines[i].end], WHITE);
 	}
 	HR(mLB->Unlock());
-	
+
 }
 
 void RGG::buildFX()
@@ -442,3 +446,6 @@ void RGG::buildProjMtx()
 //近大远处小（或者手动设置，或者看一下point sprite）
 //球面撒点
 //更多的颜色
+
+
+//需要更多的测试

@@ -130,6 +130,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="CDisk.h" />
+    <ClInclude Include="CShape.h" />
+    <ClInclude Include="CSphere.h" />
+    <ClInclude Include="CSquare.h" />
     <ClInclude Include="d3dApp.h" />
     <ClInclude Include="d3dUtil.h" />
     <ClInclude Include="DirectInput.h" />

@@ -30,6 +30,18 @@
     <ClInclude Include="Vertex.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="CShape.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CSquare.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CDisk.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CSphere.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="d3dApp.cpp">
