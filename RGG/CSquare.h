@@ -18,7 +18,7 @@ protected:
 	virtual void GenerateVertices() {
 		using std::vector;
 		unsigned seed = static_cast<unsigned>(std::chrono::system_clock::now().time_since_epoch().count());
-		//srand(seed);
+		srand(seed);
 		float tempR = sqrt((SquareSize*SquareSize)*(mAvergaeDegree + 1) / (mNumVertices*D3DX_PI));
 		std::size_t CellNum = static_cast<std::size_t>(SquareSize / tempR) + 1;
 		mCells.resize(CellNum, vector<vector<int>>(CellNum));
@@ -37,6 +37,7 @@ protected:
 
 	virtual void SpliteIntoCells() {}
 
+	
 	virtual void GenerateLines() {
 		for (int i = 0; i < mCells.size(); i++) {
 			for (int j = 0; j < mCells[i].size(); j++) {
@@ -62,5 +63,18 @@ protected:
 			}
 		}
 	}
+	
 
+	/*void GenerateLines() {
+		for (int i = 0; i < mVerts.size(); i++) {
+			for (int j = i+1; j < mVerts.size(); j++) {
+				if (Distance(mVerts[i], mVerts[j]) < mDistance) {
+					mLines.push_back(Line(i, j));
+					mMatrix[i].insert(j);
+					mMatrix[j].insert(i);
+				}
+			}
+	}
+	}
+	*/
 };

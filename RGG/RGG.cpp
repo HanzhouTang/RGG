@@ -12,14 +12,14 @@
 #include"CSquare.h"
 #include"CDisk.h"
 #include"CSphere.h"
-//想想办法
+
 #define SQUARE    1
 #define DISK      2
 #define SPHERE    3
 
-int gType = SQUARE;
-int gVertexNum = 16000;
-float gDegree = 32;
+int gType = SPHERE;
+int gVertexNum = 4000;
+float gDegree = 64;
 
 
 DWORD FtoDw(float f) {
@@ -156,6 +156,7 @@ RGG::RGG(HINSTANCE hInstance, std::string winCaption, D3DDEVTYPE devType, DWORD 
 	onResetDevice();
 	InitAllVertexDeclarations();
 	mShape->Color();
+	mShape->OutputDegreeDistribution();
 }
 
 RGG::~RGG()

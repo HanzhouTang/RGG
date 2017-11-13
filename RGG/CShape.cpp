@@ -10,7 +10,7 @@ CShape::CShape(DWORD numv, float averd, HWND h)
 	mMaxDeletedDegree = -1;
 	mVerts.resize(numv);
 	mMatrix.resize(numv);
-	mColor.resize(numv);
+	mColor.resize(numv,-1);
 	mColorTable = {
 		WHITE,RED,GREEN,YELLOW,BLUE,ORANGE,PURPLE,CYAN,MANGENTA,
 		LIME,PINK,TEAL,LACENDER,BROWN,BEIGE,MAROON,MINT,OLIVE,
@@ -33,43 +33,44 @@ void CShape::GenLinesByCells(const std::vector<int>& a, const std::vector<int>& 
 	}
 }
 
+
 void CShape::GenerateSmallestLastOrder() {
 	using std::cout;
 	using std::endl;
 	bool terminal = false;
 	std::unordered_map<int, std::size_t> degree;
-	std::vector<int> marker;
-	marker.resize(mMatrix.size());
-	std::vector<std::unordered_set<int>> bucket(mMaxDegree+1);
+	std::unordered_set<int> marker;
+	auto t = GetMinMaxDegree();
+	std::size_t maxdegree = std::get<1>(t);
+	std::size_t mindegree = std::get<0>(t);
+	std::vector<std::unordered_set<int>> bucket(maxdegree + 1);
 	for (int i = 0; i < mMatrix.size(); i++) {
-		marker[i]=mMatrix.size();
+		marker.insert(i);
 		degree[i] = mMatrix[i].size();
 		bucket[degree[i]].insert(i);
 	}
-	int current_order = mMatrix.size()-1;
-	int mindegree = 0;
 	while (true) {
+
 		while (bucket[mindegree].empty()) {
 			mindegree++;
 		}
 		auto ptr = bucket[mindegree].begin();
 		int node = *ptr;
 		mSmallestLastOrder.push_front(node);
-		mDeletedDegree.push_back(degree[node]);//modify
-		if (current_order==0) break;
+		mDeletedDegree.push_back(mindegree);
+		if (mSmallestLastOrder.size() == mMatrix.size()) break;
 		bucket[mindegree].erase(ptr);
-		marker[node] = 0;
+		marker.erase(node);
 		for (auto ptr = mMatrix[node].begin(); ptr != mMatrix[node].end(); ptr++) {
 			int v = *ptr;
-			if (marker[v] > current_order) {
-				marker[v] = current_order;
+			if (marker.find(v) != marker.end()) {
 				bucket[degree[v]].erase(v);
 				degree[v] = degree[v] - 1;
 				bucket[degree[v]].insert(v);
 				mindegree = min(mindegree, degree[v]);
 			}
 		}
-		current_order--;
+
 		if (!terminal) {
 			int count = 0;
 			std::size_t temp_degree = 0;
@@ -122,14 +123,22 @@ void CShape::GenerateVertexColor() {
 
 void CShape::OutputColorResult() {
 	std::ofstream colorf("color_result.csv", std::ofstream::out);
-	int temp_total = 0;
-	
 	for (auto&x : mColorResult) {
 		colorf << x.second << ",";
-		temp_total += x.second;
 	}
-	
 	colorf.close();
+}
+
+void CShape::OutputDegreeDistribution() {
+	std::vector<int> distribution(mMaxDegree+1,0);
+	for (auto& x : mMatrix) {
+		distribution[x.size()]++;
+	}
+	std::ofstream f("degree_distribution.csv", std::ofstream::out);
+	for (auto x : distribution) {
+			f << x << ",";
+	}
+	f.close();
 }
 
 void CShape::OutputDegreeResult() {

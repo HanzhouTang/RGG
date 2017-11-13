@@ -38,8 +38,9 @@ protected:
 	void GenerateColoring();
 	void OutputColorResult();
 	void OutputDegreeResult();
-	
+
 public:
+	void OutputDegreeDistribution();
 	void Init();
 	void Color() {
 		std::thread([&] {GenerateColoring(); }).detach();
