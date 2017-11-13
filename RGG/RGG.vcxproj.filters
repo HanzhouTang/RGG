@@ -47,9 +47,6 @@
     <ClCompile Include="d3dApp.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="d3dUtil.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="DirectInput.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -60,6 +57,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="RGG.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CShape.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

@@ -4,7 +4,7 @@ class CSphere :public CShape {
 private:
 	float Radius = 5.0f;
 public:
-	CSphere(DWORD numv, float avgd) :CShape(numv, avgd) {
+	CSphere(DWORD numv, float avgd,HWND h) :CShape(numv, avgd,h) {
 		mR = acos((mNumVertices - 2 * mAvergaeDegree - 2) / mNumVertices);
 		mRealR = Radius*mR;
 		mRealRSquared = mRealR*mRealR;
@@ -16,16 +16,16 @@ protected:
 		return Radius * theta;
 	}
 	virtual void GenerateVertices() {
-		unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+		unsigned seed = static_cast<unsigned>(std::chrono::system_clock::now().time_since_epoch().count());
 		std::mt19937 generator(seed);
 		std::uniform_real_distribution<double> uniform01(0.0, 1.0);
 		mVerts.resize(mNumVertices);
-		for (int k = 0; k < mNumVertices; k++) {
-			double theta = 2 * D3DX_PI * uniform01(generator);
-			double phi = acos(1 - 2 * uniform01(generator));
-			double x = sin(phi) * cos(theta);
-			double y = sin(phi) * sin(theta);
-			double z = cos(phi);
+		for (std::size_t k = 0; k < mNumVertices; k++) {
+			float theta = static_cast<float>(2 * D3DX_PI * uniform01(generator));
+			float phi = static_cast<float>(acos(1 - 2 * uniform01(generator)));
+			float x = sin(phi) * cos(theta);
+			float y = sin(phi) * sin(theta);
+			float z = cos(phi);
 			mVerts[k].x = x * Radius;
 			mVerts[k].z = z * Radius;
 			mVerts[k].y = y * Radius;
@@ -42,7 +42,7 @@ protected:
 					for (int y = x + 1; y < mCells[i][j].size(); y++) {
 						const auto& vs = mCells[i][j];
 						auto a = mVerts[vs[x]], b = mVerts[vs[y]];
-						if (SphereDistance(a, b) < mDistance) {
+						if (Distance(a, b) < mDistance) {
 							mLines.push_back(Line(vs[x], vs[y]));
 							mMatrix[vs[x]].insert(vs[y]);
 							mMatrix[vs[y]].insert(vs[x]);
@@ -66,7 +66,7 @@ private:
 	std::vector<float> mThetaPhiTable;
 	void GenThetaTable() {
 		float  theta = 0;
-		float phi = 0.001;
+		float phi = 0.001f;
 		while (phi < D3DX_PI) {
 			theta = mRealR / (sin(phi) * Radius);
 			if (theta > 2 * D3DX_PI)
@@ -89,9 +89,9 @@ private:
 			float theta = atan(node.y / node.x);
 			if (theta < 0) theta = theta + 2 * D3DX_PI;
 			float phi = acos(node.z / Radius);
-			int phi_number = phi / (mRealR / Radius);
+			int phi_number = static_cast<int>( phi / (mRealR / Radius));
 			float theta_scalar = mThetaPhiTable[phi_number];
-			int theta_number = theta / theta_scalar;
+			int theta_number = static_cast<int>(theta / theta_scalar);
 			mCells[phi_number][theta_number].push_back(i);
 		}
 	}

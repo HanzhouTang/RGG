@@ -301,6 +301,8 @@ LRESULT D3DApp::msgProc(UINT msg, WPARAM wParam, LPARAM lParam)
 		onColoringFinshed();
 		return 0;
 	case WM_KEYDOWN:
+		//std::cout << "key down!\n";
+		SendMessage(getMainWnd(), WM_COLORING_FINSHED,0,0);
 		if( wParam == VK_ESCAPE )
 			enableFullScreenMode(false);
 		else if( wParam == 'F' )

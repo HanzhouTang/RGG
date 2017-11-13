@@ -7,7 +7,7 @@ private:
 	const int Radius = (SquareSize/2)*(SquareSize/2);
 
 public:
-	CDisk(DWORD numv, float avgd) :CShape(numv, avgd) {
+	CDisk(DWORD numv, float avgd,HWND h) :CShape(numv, avgd,h) {
 		mR = sqrt((mAvergaeDegree + 1) / (mNumVertices));
 		mRealRSquared = ((Length*Length)*(mAvergaeDegree + 1)) / (mNumVertices * 4);
 		mRealR = sqrt(mRealRSquared);
@@ -19,7 +19,7 @@ protected:
 	}
 	virtual void GenerateVertices() {
 		using std::vector;
-		unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+		unsigned seed = static_cast<unsigned>( std::chrono::system_clock::now().time_since_epoch().count());
 		srand(seed);
 		float tempR = sqrt((SquareSize*SquareSize)*(mAvergaeDegree + 1) / (mNumVertices * 4));
 		std::size_t CellNum = static_cast<std::size_t>(SquareSize / tempR) + 1;
@@ -28,7 +28,7 @@ protected:
 		float xOffset = -SquareSize * 0.5f;
 		float zOffset = SquareSize * 0.5f;
 		int center = SquareSize / 2;
-		int i = 0;
+		std::size_t i = 0;
 		while (i < mNumVertices) {
 			int k = rand() % SquareSize;
 			int j = rand() % SquareSize;

@@ -17,14 +17,13 @@
 #define SPHERE    3
 
 int gType = SPHERE;
-int gVertexNum = 8000;
+int gVertexNum = 4000;
 float gDegree = 32;
 
 
-
-
-
-
+DWORD FtoDw(float f) {
+	return *((DWORD*)&f);
+}
 
 class RGG : public D3DApp
 {
@@ -46,31 +45,16 @@ public:
 	void buildProjMtx();
 private:
 	GfxStats* mGfxStats;
-	//DWORD mNumLines;
-	//DWORD mNumVertices;
-	//float mAvergaeDegree;
-	ColoringParameter* mColorParameter;
 	CShape* mShape;
-	//std::vector<D3DXVECTOR3> mVerts;
-	//std::vector<Line> mLines;
-	//std::vector<std::unordered_set<int>> mMatrix;
-	std::vector<int> mColor;
-	//std::unordered_map<int, std::vector<int>> mMapOfNodes; // nodes in erver cells
-	std::list<int> mSmallestLastOrder;
-	std::vector<D3DCOLOR> mColorTable;
 	IDirect3DVertexBuffer9* mLB;
 	IDirect3DVertexBuffer9*   mVB;
 	ID3DXEffect*            mFX;
 	D3DXHANDLE              mhTech;
 	D3DXHANDLE              mhWVP;
-	//D3DXHANDLE              mhTime;
-
 	float mTime;
-
 	float mCameraX;
 	float mCameraZ;
 	float mCameraHeight;
-
 	D3DXMATRIX mView;
 	D3DXMATRIX mProj;
 };
@@ -89,11 +73,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 		iss >> subs;
 		if (subs == std::string("-v") || subs == std::string("-V")) {
 			iss >> subs;
-			gVertexNum = atof(subs.c_str());
+			gVertexNum = atoi(subs.c_str());
 		}
 		else if (subs == "-d" || subs == "-D") {
 			iss >> subs;
-			gDegree = atof(subs.c_str());
+			gDegree = static_cast<float>(atof(subs.c_str()));
 		}
 		else if (subs == "-square") {
 			gType = SQUARE;
@@ -118,8 +102,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 int main() {
 	using std::cout;
 	using std::endl;
-	// Enable run-time memory check for debug builds.
-
 	auto cmd = GetCommandLine();
 	std::istringstream iss(cmd);
 	do
@@ -128,11 +110,11 @@ int main() {
 		iss >> subs;
 		if (subs == std::string("-v") || subs == std::string("-V")) {
 			iss >> subs;
-			gVertexNum = atof(subs.c_str());
+			gVertexNum = atoi(subs.c_str());
 		}
 		else if (subs == "-d" || subs == "-D") {
 			iss >> subs;
-			gDegree = atof(subs.c_str());
+			gDegree = static_cast<float>(atof(subs.c_str()));
 		}
 		else if (subs == "-square") {
 			gType = SQUARE;
@@ -152,8 +134,6 @@ int main() {
 	gDInput = &di;
 
 	return gd3dApp->run();
-
-
 }
 
 RGG::RGG(HINSTANCE hInstance, std::string winCaption, D3DDEVTYPE devType, DWORD requestedVP)
@@ -174,25 +154,11 @@ RGG::RGG(HINSTANCE hInstance, std::string winCaption, D3DDEVTYPE devType, DWORD 
 	buildFX();
 	onResetDevice();
 	InitAllVertexDeclarations();
-	mColorTable = {
-		WHITE,RED,GREEN,YELLOW,BLUE,ORANGE,PURPLE,CYAN,MANGENTA,
-		LIME,PINK,TEAL,LACENDER,BROWN,BEIGE,MAROON,MINT,OLIVE,
-		CORAL,NAVY,GREY
-	};
-	for (int i = 0; i < 500; i++) {
-		mColorTable.push_back(D3DCOLOR_XRGB(rand() % 256, rand() % 256, rand() % 256));
-	}
-
-
-	/*mColorParameter =new ColoringParameter(mMatrix, mSmallestLastOrder,\
-		mGfxStats->GetMinDegree(), mGfxStats->GetMaxDegree(),mColor,mhMainWnd);
-	CreateThread(0, 0, Coloring, mColorParameter, 0, NULL);
-	*/
+	mShape->Color();
 }
 
 RGG::~RGG()
 {
-	delete mColorParameter;
 	delete mGfxStats;
 	ReleaseCOM(mLB);
 	ReleaseCOM(mVB);
@@ -261,26 +227,31 @@ void RGG::updateScene(float dt)
 }
 
 void RGG::onColoringFinshed()
-{  /*
-	using std::cout;
-	using std::endl;
-	cout << "coloring finshed congratulation!" << endl;
+{  
+	
 	VertexCol* v = 0;
+	const auto& lines = mShape->GetLines();
+	const auto& verts = mShape->GetVertices();
 	HR(mLB->Lock(0, 0, (void**)&v, 0));
-	for (DWORD i = 0; i < mLines.size(); i++) {
-		v[i * 2] = VertexCol(mVerts[mLines[i].begin], mColorTable[mColor[mLines[i].begin]]);
-		v[i * 2 + 1] = VertexCol(mVerts[mLines[i].end], mColorTable[mColor[mLines[i].end]]);
+	for (DWORD i = 0; i < lines.size(); i++) {
+		v[i * 2] = VertexCol(verts[lines[i].begin], mShape->GetColor(lines[i].begin));
+		v[i * 2 + 1] = VertexCol(verts[lines[i].end], mShape->GetColor(lines[i].end));
 	}
 	HR(mLB->Unlock());
 	HR(mVB->Lock(0, 0, (void**)&v, 0));
-	for (DWORD i = 0; i < mVerts.size(); i++) {
-		v[i] = VertexCol(mVerts[i], mColorTable[mColor[i]]);
+	for (DWORD i = 0; i < verts.size(); i++) {
+		v[i] = VertexCol(verts[i], mShape->GetColor(i));
 	}
-	HR(mVB->Unlock());*/
+	HR(mVB->Unlock());
+	mGfxStats->SetColoringFinished();
+	mGfxStats->SetMaxDeletedDegree(mShape->GetMaxDeletedDegree());
+	mGfxStats->SetColorNeeded(mShape->GetColorNumber());
+	mGfxStats->SetMaxColorSet(mShape->GetMaxColorSet());
+	mGfxStats->SetTerminalClique(mShape->GetTerminalCliqueSize());
+//	std::cout << "coloring time " << mShape->GetColoringTime();
+	mGfxStats->SetColoringTime(mShape->GetColoringTime());
+
 }
-
-
-//如果要用point sprite，还是需要单独存储点的信息
 
 
 void RGG::drawScene()
@@ -295,15 +266,12 @@ void RGG::drawScene()
 	// Let Direct3D know the vertex buffer, index buffer and vertex 
 	// declaration we are using.
 
-
 	HR(gd3dDevice->SetVertexDeclaration(VertexCol::Decl));
-	//把 D3DRS_POINTSIZE 放到 shader 里
 	gd3dDevice->SetRenderState(D3DRS_POINTSIZE, FtoDw(7.0f));
 
 	// Setup the rendering FX
 	HR(mFX->SetTechnique(mhTech));
 	HR(mFX->SetMatrix(mhWVP, &(matRotateX*matRotateZ*mView*mProj)));
-	//HR(mFX->SetFloat(mhTime, mTime));
 	// Begin passes.
 	UINT numPasses = 0;
 	HR(mFX->Begin(&numPasses, 0));
@@ -329,35 +297,14 @@ void RGG::buildGeoBuffers()
 
 	using std::cout;
 	if (gType == SQUARE) {
-		mShape = new CSquare(gVertexNum, gDegree);
-
-		//auto t = GenVertexAndCellSquare(mNumVertices, mVerts, mAvergaeDegree, mMapOfNodes);
-		//GenVertexSquare(mNumVertices, mVerts);
-		//GenLinkingByCell(std::get<0>(t), std::get<1>(t), mLines, mMatrix, mMapOfNodes, mVerts);
-		//GenSquareLinkingLines(mVerts, mAvergaeDegree, mLines, mMatrix);
-		//
+		mShape = new CSquare(gVertexNum, gDegree, mhMainWnd);
 	}
 	else if (gType == DISK) {
-		mShape = new CDisk(gVertexNum, gDegree);
+		mShape = new CDisk(gVertexNum, gDegree, mhMainWnd);
 	}
 	else if (gType == SPHERE) {
-		mShape = new CSphere(gVertexNum, gDegree);
+		mShape = new CSphere(gVertexNum, gDegree, mhMainWnd);
 	}
-	/*else if (gType == DISK) {
-		auto t = GenVertexAndCellDisk(mNumVertices, mVerts, mAvergaeDegree, mMapOfNodes);
-		GenLinkingByCell(std::get<0>(t), std::get<1>(t), mLines, mMatrix, mMapOfNodes, mVerts);
-		mGfxStats->setR(sqrtf(std::get<1>(t)) / 5);
-	}
-	else if (gType == SPHERE) {
-		GenVertexSphere(mNumVertices, mVerts);
-		GenSphereLinkingLinesByCell(mVerts, mAvergaeDegree, mLines, mMatrix);
-
-		//cout <<"size= "<< mLines.size();
-		//system("pause");
-		//GenSphereLinkingLines(mVerts, mAvergaeDegree,mLines,mMatrix);
-		mGfxStats->setR(acos((mNumVertices - 2 * mAvergaeDegree - 2) / mNumVertices));
-	}
-	*/
 	mShape->Init();
 	mGfxStats->setVertexCount(gVertexNum);
 	mGfxStats->setR(mShape->GetR());
@@ -366,19 +313,8 @@ void RGG::buildGeoBuffers()
 	auto temp = mShape->GetMinMaxDegree();
 	mGfxStats->setMaxDegreeAndMinDegree(std::get<1>(temp), std::get<0>(temp));
 	mGfxStats->setAverageDegree(mShape->GetAverageDegree());
-	/*int mx = 0;
-	int mn = INT_MAX;
-	for (auto& x : mMatrix) {
-		mx = max(x.size(), mx);
-		mn = min(x.size(), mn);
-	}
-
-
-	mGfxStats->setAverageDegree(static_cast<float>(mLines.size() * 2) / static_cast<float>(mNumVertices));
-	mGfxStats->setMaxDegreeAndMinDegree(mx, mn);*/
-	////////////////////////////////////////////////////////////////////////////
-	auto& vertices = mShape->GetVertices();
-	auto& lines = mShape->GetLines();
+	const auto& vertices = mShape->GetVertices();
+	const auto& lines = mShape->GetLines();
 	VertexCol* v = 0;
 	HR(gd3dDevice->CreateVertexBuffer(vertices.size() * sizeof(VertexCol),
 		D3DUSAGE_WRITEONLY | D3DUSAGE_POINTS, 0, D3DPOOL_MANAGED, &mVB, 0));
@@ -414,13 +350,10 @@ void RGG::buildFX()
 	// Obtain handles.
 	mhTech = mFX->GetTechniqueByName("ColorTech");
 	mhWVP = mFX->GetParameterByName(0, "gWVP");
-	//mhTime = mFX->GetParameterByName(0, "gTime");
 }
 
 void RGG::buildViewMtx()
 {
-	//float x = mCameraRadius * cosf(mCameraRotationY);
-	//float z = mCameraRadius * sinf(mCameraRotationY);
 	D3DXVECTOR3 pos(0, mCameraHeight, 0);
 	D3DXVECTOR3 target(0.0f, 0.0f, 0.0f);
 	D3DXVECTOR3 up(0.0f, 0.0f, 0.1f);
@@ -433,19 +366,3 @@ void RGG::buildProjMtx()
 	float h = (float)md3dPP.BackBufferHeight;
 	D3DXMatrixPerspectiveFovLH(&mProj, D3DX_PI * 0.25f, w / h, 1.0f, 5000.0f);
 }
-
-
-//mesh 
-//ball
-
-
-//今天先把基本的搞完
-//明天必须把近大远小搞定
-//需要搞
-//抗锯齿
-//近大远处小（或者手动设置，或者看一下point sprite）
-//球面撒点
-//更多的颜色
-
-
-//需要更多的测试

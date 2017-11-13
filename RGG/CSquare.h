@@ -5,7 +5,7 @@ private:
 	const int Length = 10;
 	const int SquareSize = 10000;
 public:
-	CSquare(DWORD numv, float avgd) :CShape(numv, avgd) {
+	CSquare(DWORD numv, float avgd,HWND h) :CShape(numv, avgd,h) {
 		mR = sqrt((mAvergaeDegree + 1) / (D3DX_PI*mNumVertices));
 		mRealRSquared = ((Length*Length)*(mAvergaeDegree + 1)) / (mNumVertices*D3DX_PI);
 		mRealR = sqrt(mRealRSquared);
@@ -17,7 +17,7 @@ protected:
 	}
 	virtual void GenerateVertices() {
 		using std::vector;
-		unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+		unsigned seed = static_cast<unsigned>(std::chrono::system_clock::now().time_since_epoch().count());
 		srand(seed);
 		float tempR = sqrt((SquareSize*SquareSize)*(mAvergaeDegree + 1) / (mNumVertices*D3DX_PI));
 		std::size_t CellNum = static_cast<std::size_t>(SquareSize / tempR) + 1;
@@ -25,7 +25,7 @@ protected:
 		int scalar = SquareSize / Length;
 		float xOffset = -SquareSize * 0.5f;
 		float zOffset = SquareSize * 0.5f;
-		for (int i = 0; i < mNumVertices; i++) {
+		for (std::size_t i = 0; i < mNumVertices; i++) {
 			int k = rand() % SquareSize;
 			int j = rand() % SquareSize;
 			mVerts[i].x = (j + xOffset) / scalar;

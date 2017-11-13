@@ -10,85 +10,56 @@ protected:
 	float mRealR;
 	float mDistance;
 	float mInitTime;
+	float mColoringTime;
 	float mRealAverageDegree;
-	int mMaxDegree;
-	int mMinDegree;
-	std::vector<D3DXVECTOR3> mVerts;
-	std::vector<Line> mLines;
-	std::vector<std::unordered_set<int>> mMatrix;
+	std::size_t mMaxDegree;
+	std::size_t mMinDegree;
+	std::size_t mTerminalCliqueSize;
+	int mMaxColorSet;
+	std::size_t mMaxDeletedDegree;
+	std::unordered_map<int, int> mColorResult;
 	std::vector<int> mColor;
 	std::list<int> mSmallestLastOrder;
+	std::vector<std::size_t> mDeletedDegree;
+	HWND mHwnd;
+	std::vector<D3DXVECTOR3> mVerts;
+	std::vector<D3DCOLOR> mColorTable;
+	std::vector<Line> mLines;
+	std::vector<std::unordered_set<int>> mMatrix;
 	std::vector<std::vector<std::vector<int>>> mCells;
-	CShape(DWORD numv, float averd) :mNumVertices(numv), mAvergaeDegree(averd) {
-		mMaxDegree = -1;
-		mMinDegree = -1;
-		mRealAverageDegree = -1;
-		mVerts.resize(numv);
-		mMatrix.resize(numv);
-		mSmallestLastOrder.resize(numv);
-		mColor.resize(numv);
-	}
-	void GenLinesByCells(const std::vector<int>& a, const std::vector<int>& b) {
-		for (std::size_t i = 0; i < a.size(); i++) {
-			for (std::size_t j = 0; j < b.size(); j++) {
-				if (Distance(mVerts[a[i]], mVerts[b[j]]) <= mDistance) {
-					mLines.push_back(Line(a[i], b[j]));
-					mMatrix[a[i]].insert(b[j]);
-					mMatrix[b[j]].insert(a[i]);
-				}
-			}
-		}
-	}
+	CShape(DWORD numv, float averd, HWND h);
+	void GenLinesByCells(const std::vector<int>& a, const std::vector<int>& b);
 	virtual void GenerateVertices() = 0;
 	virtual void SpliteIntoCells() = 0;
 	virtual void GenerateLines() = 0;
 	virtual float Distance(D3DXVECTOR3 a, D3DXVECTOR3 b) = 0;
-
+	void GenerateSmallestLastOrder();
+	void GenerateVertexColor();
+	void GenerateColoring();
+	void OutputColorResult();
+	void OutputDegreeResult();
+	
 public:
-	void Init() {
-		__int64 cntsPerSec = 0;
-		QueryPerformanceFrequency((LARGE_INTEGER*)&cntsPerSec);
-		float secsPerCnt = 1000.0f / (float)cntsPerSec;
-		__int64 prevTimeStamp = 0;
-		__int64 currTimeStamp = 0;
-		QueryPerformanceCounter((LARGE_INTEGER*)&prevTimeStamp);
-		GenerateVertices();
-		SpliteIntoCells();
-		GenerateLines();
-		QueryPerformanceCounter((LARGE_INTEGER*)&currTimeStamp);
-		mInitTime = (currTimeStamp - prevTimeStamp)*secsPerCnt;
+	void Init();
+	void Color() {
+		std::thread([&] {GenerateColoring(); }).detach();
+	}
+    
+	D3DCOLOR GetColor(int vertice) {
+		return mColorTable[mColor[vertice]];
 	}
 	const std::vector<Line>& GetLines() { return mLines; }
 	const std::vector<D3DXVECTOR3>& GetVertices() { return mVerts; }
 	const std::vector<std::unordered_set<int>>& GetMatrix() { return mMatrix; }
-	int GetInitTime() { return mInitTime; }
+	float GetInitTime() { return mInitTime; }
 	int GetVerticesNumber() { return mNumVertices; }
-	int GetLinesNumber() { return mLines.size(); }
+	std::size_t GetLinesNumber() { return mLines.size(); }
+	inline std::size_t GetColorNumber() { return mColorResult.size(); }
 	inline  float GetR() { return mR; }
-	std::tuple<int, int> GetMinMaxDegree() {
-		float acc = 0;
-		if (mMinDegree == -1) {
-			int mx = 0;
-			int mi = INT_MAX;
-			for (auto& x : mMatrix) {
-				mx = max(mx, x.size());
-				mi = min(mi, x.size());
-				acc += x.size();
-			}
-			mMaxDegree = mx;
-			mMinDegree = mi;
-			mRealAverageDegree = acc / mNumVertices;
-		}
-		return std::make_tuple(mMinDegree, mMaxDegree);
-	}
-	float GetAverageDegree() {
-		if (mRealAverageDegree + 1 < 0.01f) {
-			float acc = 0;
-			for (auto& x : mMatrix) {
-				acc += x.size();
-			}
-			mRealAverageDegree = acc / mNumVertices;
-		}
-		return mRealAverageDegree;
-	}
+	std::tuple<std::size_t, std::size_t> GetMinMaxDegree();
+	float GetAverageDegree();
+	std::size_t GetMaxDeletedDegree();
+	int GetMaxColorSet();
+	std::size_t GetTerminalCliqueSize() { return mTerminalCliqueSize; }
+	float GetColoringTime() { return mColoringTime; }
 };
