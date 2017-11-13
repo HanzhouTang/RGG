@@ -17,8 +17,8 @@
 #define SPHERE    3
 
 int gType = SPHERE;
-int gVertexNum = 4000;
-float gDegree = 32;
+int gVertexNum = 2000;
+float gDegree = 4;
 
 
 DWORD FtoDw(float f) {
