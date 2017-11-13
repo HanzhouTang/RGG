@@ -38,38 +38,38 @@ void CShape::GenerateSmallestLastOrder() {
 	using std::endl;
 	bool terminal = false;
 	std::unordered_map<int, std::size_t> degree;
-	std::unordered_set<int> marker;
-	auto t = GetMinMaxDegree();
-	std::size_t maxdegree = std::get<1>(t);
-	std::size_t mindegree = std::get<0>(t);
-	std::vector<std::unordered_set<int>> bucket(maxdegree + 1);
+	std::vector<int> marker;
+	marker.resize(mMatrix.size());
+	std::vector<std::unordered_set<int>> bucket(mMaxDegree+1);
 	for (int i = 0; i < mMatrix.size(); i++) {
-		marker.insert(i);
+		marker[i]=mMatrix.size();
 		degree[i] = mMatrix[i].size();
 		bucket[degree[i]].insert(i);
 	}
+	int current_order = mMatrix.size()-1;
+	int mindegree = 0;
 	while (true) {
-
 		while (bucket[mindegree].empty()) {
 			mindegree++;
 		}
 		auto ptr = bucket[mindegree].begin();
 		int node = *ptr;
 		mSmallestLastOrder.push_front(node);
-		mDeletedDegree.push_back(mindegree);
-		if (mSmallestLastOrder.size() == mMatrix.size()) break;
+		mDeletedDegree.push_back(degree[node]);//modify
+		if (current_order==0) break;
 		bucket[mindegree].erase(ptr);
-		marker.erase(node);
+		marker[node] = 0;
 		for (auto ptr = mMatrix[node].begin(); ptr != mMatrix[node].end(); ptr++) {
 			int v = *ptr;
-			if (marker.find(v) != marker.end()) {
+			if (marker[v] > current_order) {
+				marker[v] = current_order;
 				bucket[degree[v]].erase(v);
 				degree[v] = degree[v] - 1;
 				bucket[degree[v]].insert(v);
 				mindegree = min(mindegree, degree[v]);
 			}
 		}
-
+		current_order--;
 		if (!terminal) {
 			int count = 0;
 			std::size_t temp_degree = 0;

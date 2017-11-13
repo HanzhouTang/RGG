@@ -7,6 +7,7 @@
 #include<sstream>
 #include<iostream>
 #include<list>
+#include<algorithm>
 #include "Vertex.h"
 #include"CSquare.h"
 #include"CDisk.h"
@@ -16,9 +17,9 @@
 #define DISK      2
 #define SPHERE    3
 
-int gType = SPHERE;
-int gVertexNum = 2000;
-float gDegree = 4;
+int gType = SQUARE;
+int gVertexNum = 16000;
+float gDegree = 32;
 
 
 DWORD FtoDw(float f) {
