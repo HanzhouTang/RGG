@@ -15,7 +15,9 @@
 #include<random>
 #include<fstream>
 #include<thread>
+#include<map>
 #define WM_COLORING_FINSHED WM_USER+1
+#define WM_BACKBONE_FINSHED WM_USER+2
 #define MAP_LENGTH  1000
 //=============================================================
 //color table

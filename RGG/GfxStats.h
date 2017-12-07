@@ -31,6 +31,14 @@ public:
 	inline void SetTerminalClique(std::size_t t) { mTerminalCliqueSize = t; }
 	inline void SetColoringTime(float t) { mColoringTime = t; }
 	inline void SetColoringFinished() { mColorFinished = true; }
+	inline void SetBiggestBipartiteEdgeNumber(std::size_t n) { mBiggestBipartiteEdgeNumber = n; }
+	inline void SetBiggestBipartiteVerticesNumber(std::size_t n) { mBiggestBipartiteVerticesNumber = n; }
+	inline void SetBiggestBipartiteDominationPercentage(float n) { mBiggestBipartiteDominationPercentage = n; }
+	inline void SetSecondBipartiteEdgeNumber(std::size_t n) { mSecondBipartiteEdgeNumber = n; }
+	inline void SetSecondBipartiteVerticesNumber(std::size_t n) { mSecondBipartiteVerticesNumber = n; }
+	inline void SetSecondBipartiteDominationPercentage(float n) { mSecondBipartiteDominationPercentage = n; }
+	inline void SetBackbonePhase(int i) { mBackbonePhase = i; }
+	inline void SetBackboneTime(float t) { mBackboneTime = t; }
 private:
 	// Prevent copying
 	GfxStats(const GfxStats& rhs);
@@ -46,13 +54,22 @@ private:
 	float mAverageDegree;
 	float mR;
 	bool mColorFinished;
+	int mBackbonePhase;
 	int mMaxColorSet;
 	float mColoringTime;
+	float mBackboneTime;
 	std::size_t mColorNeeded;
 	std::size_t mMaxDegree;
 	std::size_t mMinDegree;
 	std::size_t mEdge;
 	std::size_t mMaxDeletedDegree;
 	std::size_t mTerminalCliqueSize;
-};
+	std::size_t mBiggestBipartiteEdgeNumber;
+	std::size_t mBiggestBipartiteVerticesNumber;
+	float       mBiggestBipartiteDominationPercentage;
+	std::size_t mSecondBipartiteEdgeNumber;
+	std::size_t mSecondBipartiteVerticesNumber;
+	float       mSecondBipartiteDominationPercentage;
+
+}; 
 #endif // GFX_STATS_H

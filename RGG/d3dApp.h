@@ -24,7 +24,6 @@ public:
 
 	HINSTANCE getAppInst();
 	HWND      getMainWnd();
-
 	// Framework methods.  Derived client class overrides these methods to 
 	// implement specific application requirements.
 	virtual bool checkDeviceCaps()     { return true; }
@@ -33,6 +32,8 @@ public:
 	virtual void updateScene(float dt) {}
 	virtual void drawScene()           {}
 	virtual void onColoringFinshed()   {}
+	virtual void onBackboneFinished()  {}
+	virtual void onBackboneFinishedSecond() {}
 	// Override these methods only if you do not like the default window creation,
 	// direct3D device creation, window procedure, or message loop.  In general,
 	// for the sample programs of this book, we will not need to modify these.
@@ -56,6 +57,9 @@ protected:
 	HWND                  mhMainWnd;
 	IDirect3D9*           md3dObject;
 	bool                  mAppPaused;
+	bool                  mColorFinished;
+	bool                  mBackBoneFinished;
+	int                   mPhase;
 	D3DPRESENT_PARAMETERS md3dPP;
 };
 

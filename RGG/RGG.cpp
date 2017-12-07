@@ -17,9 +17,9 @@
 #define DISK      2
 #define SPHERE    3
 
-int gType = SPHERE;
-int gVertexNum = 4000;
-float gDegree = 64;
+int gType = DISK;
+int gVertexNum = 64000;
+float gDegree = 128;
 
 
 DWORD FtoDw(float f) {
@@ -36,7 +36,9 @@ public:
 	void onLostDevice();
 	void onResetDevice();
 	void updateScene(float dt);
-	void onColoringFinshed();
+	virtual void onColoringFinshed();
+	virtual void onBackboneFinished();
+	virtual void onBackboneFinishedSecond();
 	void drawScene();
 
 	// Helper methods
@@ -56,6 +58,8 @@ private:
 	float mCameraX;
 	float mCameraZ;
 	float mCameraHeight;
+	int LineSize;
+	int VerticeSize;
 	D3DXMATRIX mView;
 	D3DXMATRIX mProj;
 };
@@ -230,7 +234,9 @@ void RGG::updateScene(float dt)
 
 void RGG::onColoringFinshed()
 {  
-	
+	using std::cout;
+	using std::endl;
+	cout << "coloring" << endl;
 	VertexCol* v = 0;
 	const auto& lines = mShape->GetLines();
 	const auto& verts = mShape->GetVertices();
@@ -250,11 +256,72 @@ void RGG::onColoringFinshed()
 	mGfxStats->SetColorNeeded(mShape->GetColorNumber());
 	mGfxStats->SetMaxColorSet(mShape->GetMaxColorSet());
 	mGfxStats->SetTerminalClique(mShape->GetTerminalCliqueSize());
-//	std::cout << "coloring time " << mShape->GetColoringTime();
+	mGfxStats->SetBackbonePhase(0);
 	mGfxStats->SetColoringTime(mShape->GetColoringTime());
+	LineSize = lines.size();
+	VerticeSize = verts.size();
+	if(!mBackBoneFinished)
+	mShape->Backbone();
+}
+
+void RGG::onBackboneFinished()
+{
+	using std::cout;
+	using std::endl;
+	VertexCol* v = 0;
+	auto lines = mShape->GetBiggestBackboneLines();
+	auto displayVerts = mShape->GetBiggesttBackboneVertices();
+	const auto& verts = mShape->GetVertices();
+	LineSize = lines.size();
+	VerticeSize = displayVerts.size();
+	HR(mLB->Lock(0, 0, (void**)&v, 0));
+	for (DWORD i = 0; i < lines.size(); i++) {
+		v[i * 2] = VertexCol(verts[lines[i].begin], mShape->GetColor(lines[i].begin));
+		v[i * 2 + 1] = VertexCol(verts[lines[i].end], mShape->GetColor(lines[i].end));
+	}
+	HR(mLB->Unlock());
+	HR(mVB->Lock(0, 0, (void**)&v, 0));
+	int i = 0;
+	for (int x: displayVerts) {
+		v[i] = VertexCol(verts[x], mShape->GetColor(x));
+		i++;
+	}
+	HR(mVB->Unlock());
+	mGfxStats->SetBackboneTime(mShape->GetBackboneTime());
+	mGfxStats->SetBackbonePhase(1);
+	mGfxStats->SetBiggestBipartiteVerticesNumber(displayVerts.size());
+	mGfxStats->SetBiggestBipartiteEdgeNumber(lines.size() * 2);
+	mGfxStats->SetBiggestBipartiteDominationPercentage(mShape->GetDominationPercentage(displayVerts));
 
 }
 
+void RGG::onBackboneFinishedSecond() {
+	using std::cout;
+	using std::endl;
+	VertexCol* v = 0;   
+	auto lines = mShape->GetSecondBackboneLines();
+	auto displayVerts = mShape->GetSecondBackboneVertices();
+	const auto& verts = mShape->GetVertices();
+	LineSize = lines.size();
+	VerticeSize = displayVerts.size();
+	HR(mLB->Lock(0, 0, (void**)&v, 0));
+	for (DWORD i = 0; i < lines.size(); i++) {
+		v[i * 2] = VertexCol(verts[lines[i].begin], mShape->GetColor(lines[i].begin));
+		v[i * 2 + 1] = VertexCol(verts[lines[i].end], mShape->GetColor(lines[i].end));
+	}
+	HR(mLB->Unlock());
+	HR(mVB->Lock(0, 0, (void**)&v, 0));
+	int i = 0;
+	for (int x : displayVerts) {
+		v[i] = VertexCol(verts[x], mShape->GetColor(x));
+		i++;
+	}
+	HR(mVB->Unlock());
+	mGfxStats->SetBackbonePhase(2);
+	mGfxStats->SetSecondBipartiteVerticesNumber(displayVerts.size());
+	mGfxStats->SetSecondBipartiteEdgeNumber(lines.size() * 2);
+	mGfxStats->SetSecondBipartiteDominationPercentage(mShape->GetDominationPercentage(displayVerts));
+}
 
 void RGG::drawScene()
 {
@@ -281,9 +348,9 @@ void RGG::drawScene()
 	{
 		HR(mFX->BeginPass(i));
 		HR(gd3dDevice->SetStreamSource(0, mLB, 0, sizeof(VertexCol)));
-		HR(gd3dDevice->DrawPrimitive(D3DPT_LINELIST, 0, mShape->GetLinesNumber()));
+		HR(gd3dDevice->DrawPrimitive(D3DPT_LINELIST, 0, LineSize));
 		HR(gd3dDevice->SetStreamSource(0, mVB, 0, sizeof(VertexCol)));
-		HR(gd3dDevice->DrawPrimitive(D3DPT_POINTLIST, 0, mShape->GetVerticesNumber()));
+		HR(gd3dDevice->DrawPrimitive(D3DPT_POINTLIST, 0, VerticeSize));
 		HR(mFX->EndPass());
 	}
 	HR(mFX->End());
@@ -337,6 +404,8 @@ void RGG::buildGeoBuffers()
 		v[i * 2 + 1] = VertexCol(vertices[lines[i].end], WHITE);
 	}
 	HR(mLB->Unlock());
+	LineSize = lines.size();
+	VerticeSize = vertices.size();
 
 }
 

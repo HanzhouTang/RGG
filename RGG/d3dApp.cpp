@@ -19,11 +19,13 @@ D3DApp::D3DApp(HINSTANCE hInstance, std::string winCaption, D3DDEVTYPE devType, 
 	mMainWndCaption = winCaption;
 	mDevType        = devType;
 	mRequestedVP    = requestedVP;
-	
+	mColorFinished  = false;
 	mhAppInst   = hInstance;
 	mhMainWnd   = 0;
 	md3dObject  = 0;
 	mAppPaused  = false;
+	mBackBoneFinished = false;
+	mPhase = 0;
 	ZeroMemory(&md3dPP, sizeof(md3dPP));
 
 	initMainWindow();
@@ -298,11 +300,29 @@ LRESULT D3DApp::msgProc(UINT msg, WPARAM wParam, LPARAM lParam)
 		PostQuitMessage(0);
 		return 0;
 	case WM_COLORING_FINSHED:
+		mColorFinished = true;
 		onColoringFinshed();
 		return 0;
+		//onBackboneFinished();
+	case WM_BACKBONE_FINSHED:
+		mBackBoneFinished = true;
+		return 0;
+	case WM_LBUTTONDOWN:
+		if (mBackBoneFinished) {
+			mPhase = (mPhase+1) % 3;
+			if (mPhase == 0) {
+				std::cout << "call onColoringFinshed" << std::endl;
+				onColoringFinshed();
+			}
+			else if (mPhase == 1) {
+				onBackboneFinished();
+			}
+			else {
+				onBackboneFinishedSecond();
+			}
+		}
+		return 0;
 	case WM_KEYDOWN:
-		//std::cout << "key down!\n";
-		SendMessage(getMainWnd(), WM_COLORING_FINSHED,0,0);
 		if( wParam == VK_ESCAPE )
 			enableFullScreenMode(false);
 		else if( wParam == 'F' )

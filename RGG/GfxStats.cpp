@@ -9,6 +9,7 @@ GfxStats::GfxStats()
 	mNumVertices(0), mAverageDegree(0), mR(0), mInitTime(0), mColorFinished(false)
 {
 	D3DXFONT_DESC fontDesc;
+	mBackbonePhase = 0;
 	fontDesc.Height = 18;
 	fontDesc.Width = 0;
 	fontDesc.Weight = 0;
@@ -109,25 +110,76 @@ void GfxStats::display()
 	// Make static so memory is not allocated every frame.
 	static char buffer[512];
 	if (mColorFinished) {
-		sprintf(buffer, "Frames Per Second = %.2f\n"
-			"Milliseconds Per Frame = %.4f\n"
-			"Camera Height = %f\n"
-			"Vertex Count = %d\n"
-			"R = %f\n"
-			"Initing time = %fms\n"
-			"Max degree = %zd\n"
-			"Average Degree = %f\n"
-			"Min degree = %zd\n"
-			"Edges = %zd\n"
-			"Dleted Maxdegree = %zd\n"
-			"Number of color = %zd\n"
-			"Max color class set = %d\n"
-			"Terminal clique size = %zd\n"
-			"Part2 time = %.4fms\n"
-			"Press key w or s to zoom",
-			mFPS, mMilliSecPerFrame, mCameraHeight, mNumVertices, mR, mInitTime,
-			mMaxDegree, mAverageDegree, mMinDegree, mEdge, mMaxDeletedDegree,mColorNeeded,
-			mMaxColorSet,mTerminalCliqueSize, mColoringTime);
+		if (mBackbonePhase == 0)
+			sprintf(buffer, "Frames Per Second = %.2f\n"
+				"Milliseconds Per Frame = %.4f\n"
+				"Camera Height = %f\n"
+				"Vertex Count = %d\n"
+				"R = %f\n"
+				"Initing time = %fms\n"
+				"Max degree = %zd\n"
+				"Average Degree = %f\n"
+				"Min degree = %zd\n"
+				"Edges = %zd\n"
+				"Dleted Maxdegree = %zd\n"
+				"Number of color = %zd\n"
+				"Max color class set = %d\n"
+				"Terminal clique size = %zd\n"
+				"Part2 time = %.4fms\n"
+				"Press key w or s to zoom",
+				mFPS, mMilliSecPerFrame, mCameraHeight, mNumVertices, mR, mInitTime,
+				mMaxDegree, mAverageDegree, mMinDegree, mEdge, mMaxDeletedDegree, mColorNeeded,
+				mMaxColorSet, mTerminalCliqueSize, mColoringTime);
+		else if (mBackbonePhase == 1)
+			sprintf(buffer, "Frames Per Second = %.2f\n"
+				"Milliseconds Per Frame = %.4f\n"
+				"Camera Height = %f\n"
+				"Vertex Count = %d\n"
+				"R = %f\n"
+				"Initing time = %fms\n"
+				"Max degree = %zd\n"
+				"Average Degree = %f\n"
+				"Min degree = %zd\n"
+				"Edges = %zd\n"
+				"Dleted Maxdegree = %zd\n"
+				"Number of color = %zd\n"
+				"Max color class set = %d\n"
+				"Terminal clique size = %zd\n"
+				"Part2 time = %.4fms\n"
+				"Biggest Backbone:\n"
+				"Edges count: %zd\n"
+				"Vertices count: %zd\n"
+				"Domination Percent: %.1f\n"
+				"Part3 time = %.4fms\n"
+				"Press key w or s to zoom",
+				mFPS, mMilliSecPerFrame, mCameraHeight, mNumVertices, mR, mInitTime,
+				mMaxDegree, mAverageDegree, mMinDegree, mEdge, mMaxDeletedDegree, mColorNeeded,
+				mMaxColorSet, mTerminalCliqueSize, mColoringTime,mBiggestBipartiteEdgeNumber,mBiggestBipartiteVerticesNumber,mBiggestBipartiteDominationPercentage,mBackboneTime);
+		else if (mBackbonePhase == 2)
+			sprintf(buffer, "Frames Per Second = %.2f\n"
+				"Milliseconds Per Frame = %.4f\n"
+				"Camera Height = %f\n"
+				"Vertex Count = %d\n"
+				"R = %f\n"
+				"Initing time = %fms\n"
+				"Max degree = %zd\n"
+				"Average Degree = %f\n"
+				"Min degree = %zd\n"
+				"Edges = %zd\n"
+				"Dleted Maxdegree = %zd\n"
+				"Number of color = %zd\n"
+				"Max color class set = %d\n"
+				"Terminal clique size = %zd\n"
+				"Part2 time = %.4fms\n"
+				"Second biggest Backbone:\n"
+				"Edges count: %zd\n"
+				"Vertices count: %zd\n"
+				"Domination Percent: %.1f%\n"
+				"Part3 time = %.4fms\n"
+				"Press key w or s to zoom",
+				mFPS, mMilliSecPerFrame, mCameraHeight, mNumVertices, mR, mInitTime,
+				mMaxDegree, mAverageDegree, mMinDegree, mEdge, mMaxDeletedDegree, mColorNeeded,
+				mMaxColorSet, mTerminalCliqueSize, mColoringTime,mSecondBipartiteEdgeNumber,mSecondBipartiteVerticesNumber,mSecondBipartiteDominationPercentage, mBackboneTime);
 	}
 	else {
 		sprintf(buffer, "Frames Per Second = %.2f\n"
