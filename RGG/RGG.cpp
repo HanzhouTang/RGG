@@ -17,9 +17,9 @@
 #define DISK      2
 #define SPHERE    3
 
-int gType = SQUARE;
-int gVertexNum = 20;
-float gDegree = 9.1;
+int gType = SPHERE;
+int gVertexNum = 6000;
+float gDegree = 54;
 
 
 DWORD FtoDw(float f) {
