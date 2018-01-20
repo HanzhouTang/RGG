@@ -1,7 +1,7 @@
 # RGG
 Implementing an algorithm to find and dye the backbone of RGG(random geometric graph)
 ## Command 
--v vertices <number> -d <average degree> 
+-v &lt;vertices number&gt; -d &lt;average degree&gt;
 ### Shapes
 -sphere -disk or -square
 # 
