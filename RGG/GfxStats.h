@@ -39,6 +39,7 @@ public:
 	inline void SetSecondBipartiteDominationPercentage(float n) { mSecondBipartiteDominationPercentage = n; }
 	inline void SetBackbonePhase(int i) { mBackbonePhase = i; }
 	inline void SetBackboneTime(float t) { mBackboneTime = t; }
+	inline void SetSphereFacesNumber(std::size_t n) { mSphereFacesNumber = n; }
 private:
 	// Prevent copying
 	GfxStats(const GfxStats& rhs);
@@ -58,6 +59,7 @@ private:
 	int mMaxColorSet;
 	float mColoringTime;
 	float mBackboneTime;
+	std::size_t mSphereFacesNumber;
 	std::size_t mColorNeeded;
 	std::size_t mMaxDegree;
 	std::size_t mMinDegree;

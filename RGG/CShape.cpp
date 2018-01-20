@@ -1,6 +1,6 @@
 #include"CShape.h"
 CShape::CShape(DWORD numv, float averd, HWND h)
-	:mNumVertices(numv), mAvergaeDegree(averd), mHwnd(h)
+	:mNumVertices(numv), mAverageDegree(averd), mHwnd(h)
 {
 	mMaxDegree = -1;
 	mMinDegree = -1;
@@ -328,20 +328,29 @@ void CShape::GenerateBipartites() {
 	using std::endl;
 	for (int i = 0; i < 3; i++) {
 		for (int j = i + 1; j < 4; j++) {
-			if (mBipartiteGraphs.size() < 2) {
+			if (mBipartiteGraphs.size() == 0) {
 				mBipartiteGraphs.push_back(CombineColorSets(mMax4Colors[i], mMax4Colors[j]));
 				mBipartiteGraphsSize.push_back(GetValidVerticeNumber(mBipartiteGraphs.back()));
+			}
+			else if (mBipartiteGraphs.size() == 1) {
+				mBipartiteGraphs.push_back(CombineColorSets(mMax4Colors[i], mMax4Colors[j]));
+				mBipartiteGraphsSize.push_back(GetValidVerticeNumber(mBipartiteGraphs.back()));
+				if (mBipartiteGraphsSize[0] < mBipartiteGraphsSize[1]) {
+					std::swap(mBipartiteGraphsSize[0], mBipartiteGraphsSize[1]);
+					std::swap(mBipartiteGraphs[0], mBipartiteGraphs[1]);
+				}
+				
 			}
 			else {
 				auto temp = CombineColorSets(mMax4Colors[i], mMax4Colors[j]);
 				int size = GetValidVerticeNumber(temp);
 				if (size > mBipartiteGraphsSize[0]) {
-					std::exchange(size, mBipartiteGraphsSize[0]);
-					std::exchange(temp, mBipartiteGraphs[0]);
+					std::swap(size, mBipartiteGraphsSize[0]);
+					std::swap(temp, mBipartiteGraphs[0]);
 				}
 				else if (size > mBipartiteGraphsSize[1]) {
-					std::exchange(size, mBipartiteGraphsSize[1]);
-					std::exchange(temp, mBipartiteGraphs[1]);
+					std::swap(size, mBipartiteGraphsSize[1]);
+					std::swap(temp, mBipartiteGraphs[1]);
 				}
 			}
 			for (int x : mBipartiteGraphsSize) {
@@ -450,7 +459,7 @@ std::vector<std::unordered_set<int>>&  CShape::Trim(std::vector<std::unordered_s
 		if (subgraph[i].size() > 0) {
 			Visiting(subgraph, i, visted);
 			if (max_visted.size() < visted.size()) {
-				std::exchange(max_visted, visted);
+				std::swap(max_visted, visted);
 			}
 			visted.clear();
 		}

@@ -4,7 +4,7 @@ class CShape {
 protected:
 	DWORD mNumLines;
 	DWORD mNumVertices;
-	float mAvergaeDegree;
+	float mAverageDegree;
 	float mR;
 	float mRealRSquared;
 	float mRealR;

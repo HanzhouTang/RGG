@@ -8,8 +8,8 @@ private:
 
 public:
 	CDisk(DWORD numv, float avgd,HWND h) :CShape(numv, avgd,h) {
-		mR = sqrt((mAvergaeDegree + 1) / (mNumVertices));
-		mRealRSquared = ((Length*Length)*(mAvergaeDegree + 1)) / (mNumVertices * 4);
+		mR = sqrt((mAverageDegree + 1) / (mNumVertices));
+		mRealRSquared = ((Length*Length)*(mAverageDegree + 1)) / (mNumVertices * 4);
 		mRealR = sqrt(mRealRSquared);
 		mDistance = mRealRSquared;
 	}
@@ -21,7 +21,7 @@ protected:
 		using std::vector;
 		unsigned seed = static_cast<unsigned>( std::chrono::system_clock::now().time_since_epoch().count());
 		srand(seed);
-		float tempR = sqrt((SquareSize*SquareSize)*(mAvergaeDegree + 1) / (mNumVertices * 4));
+		float tempR = sqrt((SquareSize*SquareSize)*(mAverageDegree + 1) / (mNumVertices * 4));
 		std::size_t CellNum = static_cast<std::size_t>(SquareSize / tempR) + 1;
 		mCells.resize(CellNum, vector<vector<int>>(CellNum));
 		int scalar = SquareSize / Length;

@@ -5,7 +5,7 @@ private:
 	float Radius = 5.0f;
 public:
 	CSphere(DWORD numv, float avgd,HWND h) :CShape(numv, avgd,h) {
-		mR = acos((mNumVertices - 2 * mAvergaeDegree - 2) / mNumVertices);
+		mR = acos((mNumVertices - 2 * mAverageDegree - 2) / mNumVertices);
 		mRealR = Radius*mR;
 		mRealRSquared = mRealR*mRealR;
 		mDistance = mRealR;

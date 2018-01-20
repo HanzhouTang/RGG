@@ -150,11 +150,12 @@ void GfxStats::display()
 				"Edges count: %zd\n"
 				"Vertices count: %zd\n"
 				"Domination Percent: %.1f\n"
+				"Sphere Faces: %zd\n"
 				"Part3 time = %.4fms\n"
 				"Press key w or s to zoom",
 				mFPS, mMilliSecPerFrame, mCameraHeight, mNumVertices, mR, mInitTime,
 				mMaxDegree, mAverageDegree, mMinDegree, mEdge, mMaxDeletedDegree, mColorNeeded,
-				mMaxColorSet, mTerminalCliqueSize, mColoringTime,mBiggestBipartiteEdgeNumber,mBiggestBipartiteVerticesNumber,mBiggestBipartiteDominationPercentage,mBackboneTime);
+				mMaxColorSet, mTerminalCliqueSize, mColoringTime,mBiggestBipartiteEdgeNumber,mBiggestBipartiteVerticesNumber,mBiggestBipartiteDominationPercentage,mSphereFacesNumber,mBackboneTime);
 		else if (mBackbonePhase == 2)
 			sprintf(buffer, "Frames Per Second = %.2f\n"
 				"Milliseconds Per Frame = %.4f\n"
@@ -175,11 +176,12 @@ void GfxStats::display()
 				"Edges count: %zd\n"
 				"Vertices count: %zd\n"
 				"Domination Percent: %.1f%\n"
+				"Sphere Faces: %zd\n"
 				"Part3 time = %.4fms\n"
 				"Press key w or s to zoom",
 				mFPS, mMilliSecPerFrame, mCameraHeight, mNumVertices, mR, mInitTime,
 				mMaxDegree, mAverageDegree, mMinDegree, mEdge, mMaxDeletedDegree, mColorNeeded,
-				mMaxColorSet, mTerminalCliqueSize, mColoringTime,mSecondBipartiteEdgeNumber,mSecondBipartiteVerticesNumber,mSecondBipartiteDominationPercentage, mBackboneTime);
+				mMaxColorSet, mTerminalCliqueSize, mColoringTime,mSecondBipartiteEdgeNumber,mSecondBipartiteVerticesNumber,mSecondBipartiteDominationPercentage, mSphereFacesNumber,mBackboneTime);
 	}
 	else {
 		sprintf(buffer, "Frames Per Second = %.2f\n"

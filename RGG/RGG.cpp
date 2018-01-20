@@ -17,9 +17,9 @@
 #define DISK      2
 #define SPHERE    3
 
-int gType = DISK;
-int gVertexNum = 64000;
-float gDegree = 128;
+int gType = SQUARE;
+int gVertexNum = 20;
+float gDegree = 9.1;
 
 
 DWORD FtoDw(float f) {
@@ -290,9 +290,11 @@ void RGG::onBackboneFinished()
 	mGfxStats->SetBackboneTime(mShape->GetBackboneTime());
 	mGfxStats->SetBackbonePhase(1);
 	mGfxStats->SetBiggestBipartiteVerticesNumber(displayVerts.size());
-	mGfxStats->SetBiggestBipartiteEdgeNumber(lines.size() * 2);
+	mGfxStats->SetBiggestBipartiteEdgeNumber(lines.size() );
 	mGfxStats->SetBiggestBipartiteDominationPercentage(mShape->GetDominationPercentage(displayVerts));
-
+	if (gType == SPHERE&&displayVerts.size()!=0) {
+		mGfxStats->SetSphereFacesNumber(2+lines.size()-displayVerts.size());
+	}
 }
 
 void RGG::onBackboneFinishedSecond() {
@@ -319,8 +321,11 @@ void RGG::onBackboneFinishedSecond() {
 	HR(mVB->Unlock());
 	mGfxStats->SetBackbonePhase(2);
 	mGfxStats->SetSecondBipartiteVerticesNumber(displayVerts.size());
-	mGfxStats->SetSecondBipartiteEdgeNumber(lines.size() * 2);
+	mGfxStats->SetSecondBipartiteEdgeNumber(lines.size());
 	mGfxStats->SetSecondBipartiteDominationPercentage(mShape->GetDominationPercentage(displayVerts));
+	if (gType == SPHERE&&displayVerts.size() != 0) {
+		mGfxStats->SetSphereFacesNumber(2 + lines.size() - displayVerts.size());
+	}
 }
 
 void RGG::drawScene()

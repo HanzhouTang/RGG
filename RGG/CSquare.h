@@ -6,8 +6,8 @@ private:
 	const int SquareSize = 10000;
 public:
 	CSquare(DWORD numv, float avgd,HWND h) :CShape(numv, avgd,h) {
-		mR = sqrt((mAvergaeDegree + 1) / (D3DX_PI*mNumVertices));
-		mRealRSquared = ((Length*Length)*(mAvergaeDegree + 1)) / (mNumVertices*D3DX_PI);
+		mR = sqrt((mAverageDegree + 1) / (D3DX_PI*mNumVertices));
+		mRealRSquared = ((Length*Length)*(mAverageDegree + 1)) / (mNumVertices*D3DX_PI);
 		mRealR = sqrt(mRealRSquared);
 		mDistance = mRealRSquared;
 	}
@@ -19,7 +19,7 @@ protected:
 		using std::vector;
 		unsigned seed = static_cast<unsigned>(std::chrono::system_clock::now().time_since_epoch().count());
 		srand(seed);
-		float tempR = sqrt((SquareSize*SquareSize)*(mAvergaeDegree + 1) / (mNumVertices*D3DX_PI));
+		float tempR = sqrt((SquareSize*SquareSize)*(mAverageDegree + 1) / (mNumVertices*D3DX_PI));
 		std::size_t CellNum = static_cast<std::size_t>(SquareSize / tempR) + 1;
 		mCells.resize(CellNum, vector<vector<int>>(CellNum));
 		int scalar = SquareSize / Length;
